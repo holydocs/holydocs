@@ -1,0 +1,60 @@
+{{- if .HasInternalServices }}
+internal: {
+  label: "{{ .GlobalName }}"
+  style: {
+    stroke: "#374151"
+    stroke-width: 2
+    fill: "#f9fafb"
+  }
+}
+{{- end }}
+{{- range .Nodes }}
+{{- if .Person }}
+{{ .ID }}: |md
+# 🧑‍💻 {{ .Label }}
+{{- if .Content }}
+{{ .Content }}
+{{- end }}
+|
+{{ .ID }}.shape: rectangle
+{{ .ID }}.style: {
+  stroke: "#059669"
+  stroke-width: 2
+  fill: "#ecfdf5"
+}
+{{- else if .External }}
+{{ .ID }}: |md
+# {{ .Label }}
+{{- if .Content }}
+{{ .Content }}
+{{- end }}
+|
+{{ .ID }}.shape: rectangle
+{{ .ID }}.style: {
+  stroke-dash: 2
+  fill: "#fff7ed"
+}
+{{- else if .Internal }}
+internal.{{ .ID }}: |md
+# {{ .Label }}
+{{- if .Content }}
+{{ .Content }}
+{{- end }}
+|
+internal.{{ .ID }}.shape: rectangle
+{{- else }}
+{{ .ID }}: |md
+# {{ .Label }}
+{{- if .Content }}
+{{ .Content }}
+{{- end }}
+|
+{{ .ID }}.shape: rectangle
+{{- end }}
+
+{{- end }}
+{{- range .Edges }}
+{{ .From }} -> {{ .To }}: {
+  label: "{{ .Label }}"
+}
+{{- end }}

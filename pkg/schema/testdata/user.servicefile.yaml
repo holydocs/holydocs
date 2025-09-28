@@ -1,0 +1,15 @@
+servicefile: "0.1.0"
+info:
+  name: "User Service"
+  description: |
+    A service that manages user information, profiles, and authentication.
+    Handles user data requests, profile updates, and user lifecycle events.
+relationships:
+  - action: "uses"
+    participant: "elasticsearch"
+    description: "Uses Elasticsearch database"
+    technology: "Elasticsearch"
+  - action: "uses"
+    participant: "postgres"
+    description: "Uses PostgreSQL database"
+    technology: "PostgreSQL"

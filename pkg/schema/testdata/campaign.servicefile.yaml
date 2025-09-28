@@ -1,0 +1,23 @@
+servicefile: "0.1.0"
+info:
+  name: "Campaign Service"
+  description: |
+    A service that manages notification campaigns, user targeting, and campaign execution.
+    Handles campaign creation, user segmentation, scheduling, and personalized notification delivery.
+    Uses user data for targeting and personalization of campaign messages.
+relationships:
+  - action: "uses"
+    participant: "postgres"
+    description: "Uses PostgreSQL database"
+    technology: "PostgreSQL"
+  - action: "uses"
+    participant: "redis"
+    description: "Uses Redis database"
+    technology: "Redis"
+  - action: "replies"
+    participant: "Marketing Manager"
+    description: |
+      A marketing manager who is responsible for creating and managing campaigns.
+    technology: "http-server"
+    proto: "http"
+    person: true

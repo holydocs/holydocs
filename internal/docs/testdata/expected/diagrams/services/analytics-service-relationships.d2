@@ -1,0 +1,47 @@
+
+service_analytics-service: {
+  label: "Analytics Service"
+  shape: rectangle
+}
+service_reports-service: {
+  label: "Reports Service"
+  shape: rectangle
+}
+service_campaign-service: {
+  label: "Campaign Service"
+  shape: rectangle
+}
+service_notification-service: {
+  label: "Notification Service"
+  shape: rectangle
+}
+service_user-service: {
+  label: "User Service"
+  shape: rectangle
+}
+external_data-analyst: {
+  label: "Data Analyst\n[http-server]"
+  shape: rectangle
+  tooltip: ||
+A data analyst who is responsible for analyzing data and providing insights.
+
+  ||
+  style: {
+    stroke: "#059669"
+    stroke-width: 2
+    fill: "#ecfdf5"
+  }
+}
+external_clickhouse: {
+  label: "clickhouse\n[ClickHouse]"
+  shape: cylinder
+  tooltip: ||
+Uses ClickHouse database
+  ||
+}
+external_data-analyst -> service_analytics-service: "requests"
+service_analytics-service -> external_clickhouse: "uses"
+service_campaign-service -> service_analytics-service: "pub"
+service_notification-service -> service_analytics-service: "pub"
+service_reports-service -> service_analytics-service: "req"
+service_user-service -> service_analytics-service: "pub"

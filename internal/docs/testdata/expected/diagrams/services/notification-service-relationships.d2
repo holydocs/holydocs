@@ -1,0 +1,34 @@
+
+service_notification-service: {
+  label: "Notification Service"
+  shape: rectangle
+}
+service_campaign-service: {
+  label: "Campaign Service"
+  shape: rectangle
+}
+service_analytics-service: {
+  label: "Analytics Service"
+  shape: rectangle
+}
+service_user-service: {
+  label: "User Service"
+  shape: rectangle
+}
+external_firebase-cloud-messaging: {
+  label: "Firebase Cloud Messaging\n[FCM]"
+  shape: rectangle
+  tooltip: ||
+A service from Google that enables developers to send notifications and
+data messages to Android, iOS, and web apps
+
+  ||
+  style: {
+    stroke-dash: 4
+  }
+}
+service_campaign-service -> service_notification-service: "pub"
+service_notification-service -> external_firebase-cloud-messaging: "requests"
+service_notification-service -> service_analytics-service: "pub"
+service_notification-service -> service_user-service: "req"
+service_user-service -> service_notification-service: "pub"

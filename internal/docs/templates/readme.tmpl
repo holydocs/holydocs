@@ -1,0 +1,137 @@
+# {{ .Title }}
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Services](#services)
+{{- range .Systems }}
+  - [{{ .Name }}](#{{ Anchor .Name }})
+  {{- range .Services }}
+    - [{{ .Name }}](#{{ Anchor .Name }})
+      - [Relationships](#{{ Anchor .Name }}-relationships)
+      {{- if or .AsyncSummaries .ServiceFlowDiagram }}
+      - [Message Flow](#{{ Anchor .Name }}-message-flow)
+      {{- end }}
+  {{- end }}
+{{- end }}
+- [Message Flow](#message-flow)
+{{- if .MessageFlow.HasData }}
+  - [Context](#context)
+  - [Channels](#channels)
+  {{- range .MessageFlow.Channels }}
+    - [{{ .Name }}](#{{ .Anchor }})
+  {{- end }}
+{{- end }}
+
+## Overview
+
+![Overview]({{ .OverviewDiagram }})
+
+## Services
+
+{{- range .Systems }}
+### {{ .Name }}
+
+{{- $systemDiagram := index $.SystemDiagrams .Name }}
+{{- if and $systemDiagram $systemDiagram.SystemDiagram $systemDiagram.SystemD2 }}
+![{{ .Name }}]({{ $systemDiagram.SystemDiagram }})
+
+{{- end }}
+{{- range .Services }}
+#### {{ .Name }}
+
+{{- if .Description }}
+{{ .Description }}
+
+{{- end }}
+{{- if or .System .Owner .Repository .Tags }}
+{{ if .System }}- System: {{ .System }}
+{{ end }}
+{{ if .Owner }}- Owner: {{ .Owner }}
+{{ end }}
+{{ if .Repository }}- Repository: [{{ .Repository }}]({{ .Repository }})
+{{ end }}
+{{ if .Tags }}- Tags: {{ Join .Tags ", " }}
+{{ end }}
+
+{{- end }}
+<a id="{{ Anchor .Name }}-relationships"></a>
+##### Relationships
+
+![{{ .Name }} Relationships]({{ .RelationshipsDiagram }})
+
+{{- if .RelationshipSummaries }}
+{{- range .RelationshipSummaries }}
+- **{{ .Action }}** {{ .Participant }}{{- if .Technology }} via {{ .Technology }}{{- end }}{{- if .Proto }} ({{ .Proto }}){{- end }}{{- if .External }} _(external)_{{- end }}{{- if .Description }} — {{ .Description }}{{- end }}
+{{- end }}
+{{- else }}
+_No relationships documented._
+{{- end }}
+
+{{- if .InterServiceLinks }}
+##### Inter-Service Connections
+
+{{- range .InterServiceLinks }}
+- {{ .Direction }} {{ .Target }} via {{ .Channel }}{{- if eq .Kind "reply" }} (reply){{- end }}
+{{- end }}
+
+{{- end }}
+{{- if or .AsyncSummaries .ServiceFlowDiagram }}
+<a id="{{ Anchor .Name }}-message-flow"></a>
+##### Message Flow
+
+{{- if .ServiceFlowDiagram }}
+![{{ .Name }} Service Interactions]({{ .ServiceFlowDiagram }})
+
+{{- end }}
+{{- if .AsyncSummaries }}
+{{- range .AsyncSummaries }}
+- {{ .Direction }} {{ .Target }} ({{ .Label }})
+{{- end }}
+{{- end }}
+
+{{- end }}
+
+{{- end }}
+
+{{- end }}
+
+## Message Flow
+
+{{- if .MessageFlow.HasData }}
+
+### Context
+
+![System Message Flow]({{ .MessageFlow.ContextDiagram }})
+
+### Channels
+
+{{- range .MessageFlow.Channels }}
+#### {{ .Name }}
+
+![{{ .Name }}]({{ .DiagramPath }})
+
+{{- if .Messages }}
+
+##### Messages
+
+{{- range .Messages }}
+{{- if .Direction }}
+**{{ .Direction }}**: {{ .Name }}
+{{- else }}
+**{{ .Name }}**
+{{- end }}
+
+{{- if .Payload }}
+```json
+{{ .Payload }}
+```
+{{- end }}
+
+{{- end }}
+{{- end }}
+
+{{- end }}
+{{- else }}
+No async message flow information available.
+{{- end }}

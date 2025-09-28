@@ -1,0 +1,18 @@
+
+service_mailer-service: {
+  label: "Mailer Service"
+  shape: rectangle
+}
+external_sendgrid: {
+  label: "SendGrid\n[SendGrid]"
+  shape: rectangle
+  tooltip: ||
+A cloud-based email infrastructure platform that helps businesses send and manage
+large volumes of transactional and marketing emails.
+
+  ||
+  style: {
+    stroke-dash: 4
+  }
+}
+service_mailer-service -> external_sendgrid: "requests"

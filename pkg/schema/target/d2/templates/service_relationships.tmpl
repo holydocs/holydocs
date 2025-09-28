@@ -1,0 +1,37 @@
+{{- range .Services }}
+{{ .ID }}: {
+  label: "{{ .Label }}"
+  shape: rectangle
+}
+
+{{- end }}
+{{- range .ExternalNodes }}
+{{ .ID }}: {
+  label: "{{ .Label }}"
+  shape: {{ .Shape }}
+{{- if .Tooltip }}
+  tooltip: ||
+{{ .Tooltip }}
+  ||
+{{- end }}
+{{- if .Person }}
+  style: {
+    stroke: "#059669"
+    stroke-width: 2
+    fill: "#ecfdf5"
+  }
+{{- else if .External }}
+  style: {
+    stroke-dash: 4
+  }
+{{- end }}
+}
+
+{{- end }}
+{{- range .Edges }}
+{{- if .Label }}
+{{ .From }} -> {{ .To }}: "{{ .Label }}"
+{{- else }}
+{{ .From }} -> {{ .To }}
+{{- end }}
+{{- end }}

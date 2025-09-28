@@ -1,0 +1,52 @@
+{{- if .SystemNodes }}
+{{ .SystemID }}: {
+  label: "{{ .SystemName }}"
+  style: {
+    stroke: "#374151"
+    stroke-width: 2
+    fill: "#f9fafb"
+  }
+}
+{{- range .SystemNodes }}
+{{ $.SystemID }}.{{ .ID }}: "{{ .Label }}"
+{{- end }}
+{{- end }}
+{{- range .ExternalNodes }}
+{{- if .Person }}
+{{ .ID }}: "🧑‍💻 {{ .Label }}"
+{{ .ID }}.style: {
+  stroke: "#059669"
+  stroke-width: 2
+  fill: "#ecfdf5"
+}
+{{- else if .External }}
+{{ .ID }}: "{{ .Label }}"
+{{ .ID }}.style: {
+  stroke-dash: 2
+  fill: "#fff7ed"
+}
+{{- else }}
+{{ .ID }}: "{{ .Label }}"
+{{- end }}
+{{- end }}
+{{- range .Edges }}
+{{- $fromIsSystem := false }}
+{{- $toIsSystem := false }}
+{{- $currentFrom := .From }}
+{{- $currentTo := .To }}
+{{- range $.SystemNodes }}
+{{- if eq .ID $currentFrom }}
+{{- $fromIsSystem = true }}
+{{- end }}
+{{- if eq .ID $currentTo }}
+{{- $toIsSystem = true }}
+{{- end }}
+{{- end }}
+{{- if $fromIsSystem }}
+{{ $.SystemID }}.{{ $currentFrom }} -> {{ if $toIsSystem }}{{ $.SystemID }}.{{ $currentTo }}{{ else }}{{ $currentTo }}{{ end }}: "{{ .Label }}"
+{{- else if $toIsSystem }}
+{{ $currentFrom }} -> {{ $.SystemID }}.{{ $currentTo }}: "{{ .Label }}"
+{{- else }}
+{{ $currentFrom }} -> {{ $currentTo }}: "{{ .Label }}"
+{{- end }}
+{{- end }}

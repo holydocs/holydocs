@@ -1,0 +1,294 @@
+asyncapi: 3.0.0
+
+info:
+  title: Reports Service
+  version: 1.0.0
+  description: |
+    A service that generates and manages analytics reports by requesting data from the analytics service.
+    Provides report scheduling, customization, and delivery capabilities for business intelligence
+    and data-driven decision making.
+
+channels:
+  analytics.report.request:
+    address: analytics.report.request
+    messages:
+      AnalyticsReportRequest:
+        $ref: '#/components/messages/AnalyticsReportRequest'
+      AnalyticsReportReply:
+        $ref: '#/components/messages/AnalyticsReportReply'
+
+  reports.scheduled:
+    address: reports.scheduled
+    messages:
+      ScheduledReport:
+        $ref: '#/components/messages/ScheduledReport'
+
+  reports.delivery:
+    address: reports.delivery
+    messages:
+      ReportDelivery:
+        $ref: '#/components/messages/ReportDelivery'
+
+operations:
+  requestAnalyticsReport:
+    action: send
+    channel:
+      $ref: '#/channels/analytics.report.request'
+    summary: Request analytics report from analytics service
+    messages:
+      - $ref: '#/channels/analytics.report.request/messages/AnalyticsReportRequest'
+    reply:
+      channel:
+        $ref: '#/channels/analytics.report.request'
+      messages:
+        - $ref: '#/channels/analytics.report.request/messages/AnalyticsReportReply'
+
+  sendScheduledReport:
+    action: send
+    channel:
+      $ref: '#/channels/reports.scheduled'
+    summary: Send scheduled report notifications
+    messages:
+      - $ref: '#/channels/reports.scheduled/messages/ScheduledReport'
+
+  deliverReport:
+    action: send
+    channel:
+      $ref: '#/channels/reports.delivery'
+    summary: Deliver completed reports to users
+    messages:
+      - $ref: '#/channels/reports.delivery/messages/ReportDelivery'
+
+components:
+  messages:
+    AnalyticsReportRequest:
+      name: AnalyticsReportRequest
+      title: Analytics Report Request Message
+      summary: Message for requesting analytics reports and insights
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          report_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the report request
+          report_type:
+            type: string
+            enum: [user_activity, notification_performance, campaign_effectiveness, system_health, custom]
+            description: Type of report requested
+          time_range:
+            $ref: '#/components/schemas/TimeRange'
+          filters:
+            type: object
+            properties:
+              user_segments:
+                type: array
+                items:
+                  type: string
+                  enum: [all_users, new_users, active_users, inactive_users, premium_users, free_users]
+              event_types:
+                type: array
+                items:
+                  type: string
+              campaign_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+              user_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+            description: Filters to apply to the report
+          metrics:
+            type: array
+            items:
+              type: string
+              enum: [event_count, user_count, conversion_rate, engagement_rate, response_time, error_rate]
+            description: Specific metrics to include in the report
+          format:
+            type: string
+            enum: [json, csv, pdf]
+            description: Output format for the report
+          priority:
+            type: string
+            enum: [low, normal, high, urgent]
+            description: Priority level for report generation
+        required:
+          - report_id
+          - report_type
+          - time_range
+
+    AnalyticsReportReply:
+      name: AnalyticsReportReply
+      title: Analytics Report Reply Message
+      summary: Response message containing the requested analytics report
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          report_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the report request
+          status:
+            type: string
+            enum: [success, error, partial]
+            description: Status of the report generation
+          report_data:
+            type: object
+            description: The actual report data
+            properties:
+              summary:
+                type: object
+                description: High-level summary of the report
+              metrics:
+                type: object
+                description: Detailed metrics and statistics
+              charts:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [line, bar, pie, scatter, heatmap]
+                    data:
+                      type: object
+                    title:
+                      type: string
+              insights:
+                type: array
+                items:
+                  type: string
+                description: Key insights and recommendations
+          error_message:
+            type: string
+            description: Error message if status is error
+          generated_at:
+            type: string
+            format: date-time
+            description: Timestamp when the report was generated
+          expires_at:
+            type: string
+            format: date-time
+            description: Timestamp when the report data expires
+        required:
+          - report_id
+          - status
+          - generated_at
+
+    ScheduledReport:
+      name: ScheduledReport
+      title: Scheduled Report Message
+      summary: Message for scheduled report notifications
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          schedule_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the schedule
+          report_type:
+            type: string
+            enum: [user_activity, notification_performance, campaign_effectiveness, system_health, custom]
+            description: Type of report to generate
+          schedule:
+            type: object
+            properties:
+              frequency:
+                type: string
+                enum: [daily, weekly, monthly, quarterly, yearly]
+              time:
+                type: string
+                format: time
+                description: Time of day to generate the report
+              timezone:
+                type: string
+                description: Timezone for the schedule
+            required:
+              - frequency
+              - time
+          recipients:
+            type: array
+            items:
+              type: string
+              format: email
+            description: Email addresses to receive the report
+          next_run:
+            type: string
+            format: date-time
+            description: Next scheduled run time
+        required:
+          - schedule_id
+          - report_type
+          - schedule
+          - recipients
+
+    ReportDelivery:
+      name: ReportDelivery
+      title: Report Delivery Message
+      summary: Message for delivering completed reports
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          delivery_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the delivery
+          report_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the report
+          recipient:
+            type: string
+            format: email
+            description: Email address of the recipient
+          delivery_method:
+            type: string
+            enum: [email, webhook, s3, ftp]
+            description: Method used to deliver the report
+          status:
+            type: string
+            enum: [pending, sent, delivered, failed]
+            description: Status of the delivery
+          attachment_url:
+            type: string
+            format: uri
+            description: URL to the report file if applicable
+          delivered_at:
+            type: string
+            format: date-time
+            description: Timestamp when the report was delivered
+          error_message:
+            type: string
+            description: Error message if delivery failed
+        required:
+          - delivery_id
+          - report_id
+          - recipient
+          - delivery_method
+          - status
+
+  schemas:
+    TimeRange:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+          description: Start date for the time range
+        end_date:
+          type: string
+          format: date
+          description: End date for the time range
+        timezone:
+          type: string
+          description: Timezone for the date range
+      required:
+        - start_date
+        - end_date

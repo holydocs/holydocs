@@ -1,0 +1,10 @@
+
+service_reports-service: {
+  label: "Reports Service"
+  shape: rectangle
+}
+service_analytics-service: {
+  label: "Analytics Service"
+  shape: rectangle
+}
+service_reports-service -> service_analytics-service: "req"

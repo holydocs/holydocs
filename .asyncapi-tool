@@ -1,0 +1,10 @@
+title: HolyDOCs
+description: Generate system-architecture documentation from Servicefiles, AsyncAPI specifications, tests artifacts, etc.
+filters:
+  language: Go
+  technology:
+    - Go
+    - D2
+    - Markdown
+  categories:
+    - documentation-generator

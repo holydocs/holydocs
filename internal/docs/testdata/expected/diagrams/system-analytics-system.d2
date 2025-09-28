@@ -1,0 +1,25 @@
+
+analytics-system: {
+  label: "Analytics System"
+  style: {
+    stroke: "#374151"
+    stroke-width: 2
+    fill: "#f9fafb"
+  }
+}
+analytics-system.service_analytics-service: "Analytics Service"
+analytics-system.service_reports-service: "Reports Service"
+service_campaign-service: "Campaign Service"
+external_data-analyst: "🧑‍💻 Data Analyst"
+external_data-analyst.style: {
+  stroke: "#059669"
+  stroke-width: 2
+  fill: "#ecfdf5"
+}
+service_notification-service: "Notification Service"
+service_user-service: "User Service"
+external_data-analyst -> analytics-system.service_analytics-service: "requests"
+service_campaign-service -> analytics-system.service_analytics-service: "send"
+service_notification-service -> analytics-system.service_analytics-service: "send"
+analytics-system.service_reports-service -> analytics-system.service_analytics-service: "req"
+service_user-service -> analytics-system.service_analytics-service: "send"

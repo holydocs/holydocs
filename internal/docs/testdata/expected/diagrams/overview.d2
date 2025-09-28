@@ -1,0 +1,110 @@
+
+internal: {
+  label: "Internal Services"
+  style: {
+    stroke: "#374151"
+    stroke-width: 2
+    fill: "#f9fafb"
+  }
+}
+internal.system_analytics-system: |md
+# Analytics System
+|
+internal.system_analytics-system.shape: rectangle
+internal.service_campaign-service: |md
+# Campaign Service
+A service that manages notification campaigns, user  
+targeting, and campaign execution. Handles campaign creation,  
+user segmentation, scheduling, and personalized notification delivery.  
+Uses user data for targeting and personalization  
+of campaign messages.
+|
+internal.service_campaign-service.shape: rectangle
+external_data-analyst: |md
+# 🧑‍💻 Data Analyst
+A data analyst who is responsible for  
+analyzing data and providing insights.
+|
+external_data-analyst.shape: rectangle
+external_data-analyst.style: {
+  stroke: "#059669"
+  stroke-width: 2
+  fill: "#ecfdf5"
+}
+external_firebase-cloud-messaging: |md
+# Firebase Cloud Messaging
+A service from Google that enables developers  
+to send notifications and data messages to  
+Android, iOS, and web apps
+|
+external_firebase-cloud-messaging.shape: rectangle
+external_firebase-cloud-messaging.style: {
+  stroke-dash: 2
+  fill: "#fff7ed"
+}
+external_marketing-manager: |md
+# 🧑‍💻 Marketing Manager
+A marketing manager who is responsible for  
+creating and managing campaigns.
+|
+external_marketing-manager.shape: rectangle
+external_marketing-manager.style: {
+  stroke: "#059669"
+  stroke-width: 2
+  fill: "#ecfdf5"
+}
+internal.system_notification-system: |md
+# Notification System
+|
+internal.system_notification-system.shape: rectangle
+external_sendgrid: |md
+# SendGrid
+A cloud-based email infrastructure platform that helps  
+businesses send and manage large volumes of  
+transactional and marketing emails.
+|
+external_sendgrid.shape: rectangle
+external_sendgrid.style: {
+  stroke-dash: 2
+  fill: "#fff7ed"
+}
+internal.service_user-service: |md
+# User Service
+A service that manages user information, profiles,  
+and authentication. Handles user data requests, profile  
+updates, and user lifecycle events.
+|
+internal.service_user-service.shape: rectangle
+external_data-analyst -> internal.system_analytics-system: {
+  label: "requests"
+}
+external_marketing-manager -> internal.service_campaign-service: {
+  label: "requests"
+}
+internal.service_campaign-service -> internal.service_user-service: {
+  label: "req"
+}
+internal.service_campaign-service -> internal.system_analytics-system: {
+  label: "pub"
+}
+internal.service_campaign-service -> internal.system_notification-system: {
+  label: "pub"
+}
+internal.service_user-service -> internal.system_analytics-system: {
+  label: "pub"
+}
+internal.service_user-service -> internal.system_notification-system: {
+  label: "pub"
+}
+internal.system_notification-system -> external_firebase-cloud-messaging: {
+  label: "requests"
+}
+internal.system_notification-system -> external_sendgrid: {
+  label: "requests"
+}
+internal.system_notification-system -> internal.service_user-service: {
+  label: "req"
+}
+internal.system_notification-system -> internal.system_analytics-system: {
+  label: "pub"
+}
