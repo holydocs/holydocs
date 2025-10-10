@@ -45,7 +45,7 @@ func getTestDataFiles() ([]string, []string) {
 
 	asyncFiles := []string{
 		filepath.Join(testdataDir, "analytics.asyncapi.yaml"),
-		filepath.Join(testdataDir, "campaign.analytics.yaml"),
+		filepath.Join(testdataDir, "campaign.asyncapi.yaml"),
 		filepath.Join(testdataDir, "mailer.asyncapi.yaml"),
 		filepath.Join(testdataDir, "notification.asyncapi.yaml"),
 		filepath.Join(testdataDir, "reports.asyncapi.yaml"),
