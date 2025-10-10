@@ -190,9 +190,20 @@ func (c *Command) generateDocumentation(ctx context.Context, config *CommandConf
 		return fmt.Errorf("setting up message flow target: %w", err)
 	}
 
-	if err := docs.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target, config.Title, config.GlobalName,
-		config.OutputDir); err != nil {
+	newChangelog, err := docs.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target, config.Title, config.GlobalName,
+		config.OutputDir)
+	if err != nil {
 		return fmt.Errorf("generating documentation: %w", err)
+	}
+
+	if newChangelog != nil && len(newChangelog.Changes) > 0 {
+		fmt.Printf("\nNew Changes Detected:\n")
+		for _, change := range newChangelog.Changes {
+			fmt.Printf("• %s %s: %s\n", change.Type, change.Category, change.Details)
+			if change.Diff != "" {
+				fmt.Println(change.Diff)
+			}
+		}
 	}
 
 	return nil

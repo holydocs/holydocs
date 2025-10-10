@@ -22,6 +22,9 @@
     - [{{ .Name }}](#{{ .Anchor }})
   {{- end }}
 {{- end }}
+{{- if .Changelogs }}
+- [Changelog](#changelog)
+{{- end }}
 
 ## Overview
 
@@ -134,4 +137,21 @@ _No relationships documented._
 {{- end }}
 {{- else }}
 No async message flow information available.
+{{- end }}
+
+{{- if .Changelogs }}
+## Changelog
+
+{{- range .Changelogs }}
+### {{ .Date.Format "2006-01-02 15:04" }}
+{{- range .Changes }}
+- **{{ .Type }}** {{ .Category }}: {{ .Details }}
+{{- if .Diff }}
+```json
+{{ .Diff }}
+```
+{{- end }}
+{{- end }}
+
+{{- end }}
 {{- end }}

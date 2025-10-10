@@ -112,20 +112,20 @@ holydocs gen-docs --service-files "service1.servicefile.yaml,service2.servicefil
 HolyDOCs is actively developed with the following features planned:
 
 ### Documentation Generation
-- **Single Page / Multi Page Documentation**: Support for both single-page applications and multi-page documentation sites
-- **Changelog Integration**: Automatic changelog generation similar to MessageFlow, tracking changes in service specifications over time
+- [ ] **Single Page / Multi Page Documentation**: Support for both single-page applications and multi-page documentation sites
+- [x] **Changelog Integration**: Automatic changelog generation similar to MessageFlow, tracking changes in service specifications over time
 
 ### Extensibility
-- **Manual Extensibility**: Configuration file support for customizing documentation generation
-- **Markdown Integration**: Support for custom markdown content and templates
+- [ ] **Manual Extensibility**: Configuration file support for customizing documentation generation
+- [ ] **Markdown Integration**: Support for custom markdown content and templates
 
 ### Deployment & Hosting
-- **Static HTML Generation**: Generate static HTML files for easy deployment
-- **On-the-fly Serving**: Built-in web server for serving documentation dynamically
+- [ ] **Static HTML Generation**: Generate static HTML files for easy deployment
+- [ ] **On-the-fly Serving**: Built-in web server for serving documentation dynamically
 
 ### Service Artifacts Support
-- **Multiple Specification Formats**: Support for various service artifacts including AsyncAPI, OpenAPI/Swagger, gRPC, etc.
+- [ ] **Multiple Specification Formats**: Support for various service artifacts including AsyncAPI, OpenAPI/Swagger, gRPC, etc.
 
 ### Architecture Documentation
-- **Architecture Decision Records (ADRs)**: Support for documenting architectural decisions
-- **Use Cases Documentation**: Structured documentation of system use cases and scenarios
+- [ ] **Architecture Decision Records (ADRs)**: Support for documenting architectural decisions
+- [ ] **Use Cases Documentation**: Structured documentation of system use cases and scenarios

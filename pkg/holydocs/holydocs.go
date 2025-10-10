@@ -40,7 +40,7 @@ type Schema struct {
 	Services []Service `json:"services"`
 }
 
-// Sort sorts the services and their relationships in a consistent order.
+// Sort sorts the services, their relationships, and operations in a consistent order.
 func (s *Schema) Sort() {
 	for i := range s.Services {
 		sort.Slice(s.Services[i].Relationships, func(j, k int) bool {
@@ -56,6 +56,17 @@ func (s *Schema) Sort() {
 			}
 
 			return rel1.Technology < rel2.Technology
+		})
+
+		sort.Slice(s.Services[i].Operation, func(j, k int) bool {
+			op1 := s.Services[i].Operation[j]
+			op2 := s.Services[i].Operation[k]
+
+			if op1.Action != op2.Action {
+				return op1.Action < op2.Action
+			}
+
+			return op1.Channel.Name < op2.Channel.Name
 		})
 	}
 
@@ -467,9 +478,11 @@ func CompareSchemas(oldSchema, newSchema Schema) Changelog {
 				Timestamp: now,
 			})
 		} else {
-			// Compare relationships within the same service
 			serviceChanges := compareServiceRelationships(oldService, newServices[name], now)
 			changes = append(changes, serviceChanges...)
+
+			operationChanges := compareServiceOperations(oldService, newServices[name], now)
+			changes = append(changes, operationChanges...)
 		}
 	}
 
@@ -567,4 +580,95 @@ func findChangedRelationship(oldRel, newRel Relationship, serviceName, key strin
 
 func relationshipKey(rel Relationship) string {
 	return fmt.Sprintf("%s|%s|%s|%s", rel.Action, rel.Participant, rel.Technology, rel.Proto)
+}
+
+// compareServiceOperations compares operations (AsyncAPI channels) between two services.
+func compareServiceOperations(oldService, newService Service, timestamp time.Time) []Change {
+	oldOps := buildOperationMap(oldService.Operation)
+	newOps := buildOperationMap(newService.Operation)
+
+	changes := []Change{}
+	changes = append(changes, findAddedOperations(oldOps, newOps, newService.Info.Name, timestamp)...)
+	changes = append(changes, findRemovedAndChangedOperations(oldOps, newOps,
+		oldService.Info.Name, newService.Info.Name, timestamp)...)
+
+	return changes
+}
+
+// buildOperationMap creates a map of operations for efficient comparison.
+func buildOperationMap(operations []Operation) map[string]Operation {
+	opMap := make(map[string]Operation)
+	for _, op := range operations {
+		key := operationKey(op)
+		opMap[key] = op
+	}
+
+	return opMap
+}
+
+// findAddedOperations finds operations that were added to the service.
+func findAddedOperations(oldOps, newOps map[string]Operation, serviceName string, timestamp time.Time) []Change {
+	changes := []Change{}
+	for key, newOp := range newOps {
+		if _, exists := oldOps[key]; !exists {
+			changes = append(changes, Change{
+				Type:     ChangeTypeAdded,
+				Category: "operation",
+				Name:     fmt.Sprintf("%s:%s", serviceName, key),
+				Details: fmt.Sprintf("'%s' on channel '%s' was added to service '%s'",
+					newOp.Action, newOp.Channel.Name, serviceName),
+				Timestamp: timestamp,
+			})
+		}
+	}
+
+	return changes
+}
+
+// findRemovedAndChangedOperations finds operations that were removed or changed.
+func findRemovedAndChangedOperations(
+	oldOps, newOps map[string]Operation,
+	oldServiceName, newServiceName string,
+	timestamp time.Time,
+) []Change {
+	changes := []Change{}
+	for key, oldOp := range oldOps {
+		if newOp, exists := newOps[key]; exists {
+			// Check if the operation changed (message payload changed)
+			if oldOp.Channel.Message.Payload != newOp.Channel.Message.Payload {
+				diff := cmp.Diff(oldOp.Channel.Message.Payload, newOp.Channel.Message.Payload)
+				changes = append(changes, Change{
+					Type:     ChangeTypeChanged,
+					Category: "message",
+					Name:     fmt.Sprintf("%s:%s", newServiceName, key),
+					Details: fmt.Sprintf("Message payload changed for operation '%s' on channel '%s' in service '%s'",
+						newOp.Action, newOp.Channel.Name, newServiceName),
+					Diff:      diff,
+					Timestamp: timestamp,
+				})
+			}
+		} else {
+			// Operation was removed
+			changes = append(changes, Change{
+				Type:     ChangeTypeRemoved,
+				Category: "operation",
+				Name:     fmt.Sprintf("%s:%s", oldServiceName, key),
+				Details: fmt.Sprintf("'%s' on channel '%s' was removed from service '%s'",
+					oldOp.Action, oldOp.Channel.Name, oldServiceName),
+				Timestamp: timestamp,
+			})
+		}
+	}
+
+	return changes
+}
+
+// operationKey generates a unique key for an operation.
+func operationKey(op Operation) string {
+	key := fmt.Sprintf("%s:%s", op.Action, op.Channel.Name)
+	if op.Reply != nil {
+		key += ":" + op.Reply.Name
+	}
+
+	return key
 }

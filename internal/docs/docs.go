@@ -3,6 +3,7 @@ package docs
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -28,6 +29,12 @@ var (
 //go:embed templates/readme.tmpl
 var readmeTemplateFS embed.FS
 
+// Metadata represents the metadata for the documentation.
+type Metadata struct {
+	Schema     holydocs.Schema      `json:"schema"`
+	Changelogs []holydocs.Changelog `json:"changelogs"`
+}
+
 // File permissions.
 const (
 	dirPerm  = 0o755
@@ -48,6 +55,7 @@ type templateData struct {
 	Systems         []systemView
 	SystemDiagrams  map[string]systemDiagramView
 	MessageFlow     messageFlowView
+	Changelogs      []holydocs.Changelog
 }
 
 type systemView struct {
@@ -155,30 +163,77 @@ func Generate(
 	messageflowSchema mf.Schema,
 	messageflowTarget mf.Target,
 	title, globalName, outputDir string,
-) error {
+) (*holydocs.Changelog, error) {
 	if holydocsTarget == nil {
-		return ErrHolydocsTargetRequired
+		return nil, ErrHolydocsTargetRequired
+	}
+
+	// Sort schemas before processing to ensure consistent ordering
+	schema.Sort()
+	messageflowSchema.Sort()
+
+	metadata, newChangelog, err := processMetadata(schema, outputDir)
+	if err != nil {
+		return nil, fmt.Errorf("error processing metadata: %w", err)
 	}
 
 	diagramsDir, serviceDiagramDir, messageflowDiagramDir, err := setupOutputDirectories(outputDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	schema.Sort()
-	messageflowSchema.Sort()
 	asyncEdges := buildAsyncEdges(messageflowSchema)
 
 	overviewDiagramPath, serviceViews, systemDiagrams, mfv, err := generateAllDiagrams(
 		ctx, schema, asyncEdges, holydocsTarget, messageflowSchema, messageflowTarget,
 		globalName, diagramsDir, serviceDiagramDir, messageflowDiagramDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	data := buildTemplateData(title, overviewDiagramPath, serviceViews, systemDiagrams, mfv)
+	data := buildTemplateData(title, overviewDiagramPath, serviceViews, systemDiagrams, mfv, metadata.Changelogs)
 
-	return writeReadme(outputDir, data)
+	return newChangelog, writeReadme(outputDir, data)
+}
+
+func processMetadata(schema holydocs.Schema, outputDir string) (*Metadata, *holydocs.Changelog, error) {
+	existingMetadata, err := readMetadata(outputDir)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading existing holydocs data: %w", err)
+	}
+
+	var (
+		newChangelog       *holydocs.Changelog
+		existingChangelogs []holydocs.Changelog
+	)
+
+	if existingMetadata != nil {
+		changelog := holydocs.CompareSchemas(existingMetadata.Schema, schema)
+		if len(changelog.Changes) > 0 {
+			newChangelog = &changelog
+		}
+		existingChangelogs = existingMetadata.Changelogs
+	}
+
+	metadata := Metadata{
+		Schema:     schema,
+		Changelogs: existingChangelogs,
+	}
+
+	if newChangelog != nil {
+		metadata.Changelogs = append(metadata.Changelogs, *newChangelog)
+	}
+
+	// Sort changelogs from newest to oldest
+	sort.Slice(metadata.Changelogs, func(i, j int) bool {
+		return metadata.Changelogs[i].Date.After(metadata.Changelogs[j].Date)
+	})
+
+	if err := writeMetadata(outputDir, metadata); err != nil {
+		return nil, nil, fmt.Errorf("error writing holydocs data: %w", err)
+	}
+
+	return &metadata, newChangelog, nil
 }
 
 func setupOutputDirectories(outputDir string) (string, string, string, error) {
@@ -243,7 +298,7 @@ func generateAllDiagrams(
 }
 
 func buildTemplateData(title, overviewDiagramPath string, serviceViews []serviceView,
-	systemDiagrams map[string]systemDiagramView, mfv messageFlowView) templateData {
+	systemDiagrams map[string]systemDiagramView, mfv messageFlowView, changelogs []holydocs.Changelog) templateData {
 	return templateData{
 		Title:           title,
 		OverviewDiagram: filepath.ToSlash(filepath.Join(diagramsDirName, filepath.Base(overviewDiagramPath))),
@@ -252,6 +307,7 @@ func buildTemplateData(title, overviewDiagramPath string, serviceViews []service
 		Systems:        groupServicesBySystem(serviceViews),
 		SystemDiagrams: systemDiagrams,
 		MessageFlow:    mfv,
+		Changelogs:     changelogs,
 	}
 }
 
@@ -1133,4 +1189,43 @@ func extractSendMessages(operations []opEntry, appendMessage func(string, mf.Mes
 
 		break
 	}
+}
+
+func readMetadata(outputDir string) (*Metadata, error) {
+	metadataPath := filepath.Join(outputDir, "holydocs.json")
+
+	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
+		return nil, nil // No existing metadata
+	}
+
+	data, err := os.ReadFile(metadataPath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading metadata file: %w", err)
+	}
+
+	var metadata Metadata
+	if err := json.Unmarshal(data, &metadata); err != nil {
+		return nil, fmt.Errorf("error unmarshaling metadata: %w", err)
+	}
+
+	return &metadata, nil
+}
+
+func writeMetadata(outputDir string, data Metadata) error {
+	if err := os.MkdirAll(outputDir, dirPerm); err != nil {
+		return fmt.Errorf("error creating output directory: %w", err)
+	}
+
+	metadataPath := filepath.Join(outputDir, "holydocs.json")
+
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshaling metadata: %w", err)
+	}
+
+	if err := os.WriteFile(metadataPath, jsonData, filePerm); err != nil {
+		return fmt.Errorf("error writing metadata file: %w", err)
+	}
+
+	return nil
 }
