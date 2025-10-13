@@ -15,9 +15,15 @@ func TestLoadConfig_Defaults(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "HolyDOCs", config.Output.Title)
-	assert.Equal(t, "docs", config.Output.Directory)
+	assert.Equal(t, "docs", config.Output.Dir)
 	assert.Equal(t, "Internal Services", config.Output.GlobalName)
-	assert.Equal(t, ".", config.Input.Directory)
+	assert.Equal(t, ".", config.Input.Dir)
+
+	assert.Equal(t, int64(64), config.Diagram.D2.Pad)
+	assert.Equal(t, int64(0), config.Diagram.D2.Theme)
+	assert.False(t, config.Diagram.D2.Sketch)
+	assert.Equal(t, "SourceSansPro", config.Diagram.D2.Font)
+	assert.Equal(t, "elk", config.Diagram.D2.Layout)
 }
 
 func TestLoadConfig_FromYAML(t *testing.T) {
@@ -25,7 +31,7 @@ func TestLoadConfig_FromYAML(t *testing.T) {
 	yamlContent := `
 output:
   title: "YAML Test Title"
-  directory: "/tmp/yaml-output"
+  dir: "/tmp/yaml-output"
   global_name: "YAML Global"
 input:
   dir: "/tmp/yaml-input"
@@ -34,6 +40,13 @@ input:
     - "/tmp/api2.asyncapi.yaml"
   service_files:
     - "/tmp/service1.servicefile.yaml"
+diagram:
+  d2:
+    pad: 100
+    theme: 1
+    sketch: true
+    font: "SourceCodePro"
+    layout: "elk"
 `
 
 	tmpDir := t.TempDir()
@@ -45,11 +58,18 @@ input:
 
 	require.NoError(t, err)
 	assert.Equal(t, "YAML Test Title", config.Output.Title)
-	assert.Equal(t, "/tmp/yaml-output", config.Output.Directory)
+	assert.Equal(t, "/tmp/yaml-output", config.Output.Dir)
 	assert.Equal(t, "YAML Global", config.Output.GlobalName)
-	assert.Equal(t, "/tmp/yaml-input", config.Input.Directory)
+	assert.Equal(t, "/tmp/yaml-input", config.Input.Dir)
 	assert.Equal(t, []string{"/tmp/api1.asyncapi.yaml", "/tmp/api2.asyncapi.yaml"}, config.Input.AsyncAPIFiles)
 	assert.Equal(t, []string{"/tmp/service1.servicefile.yaml"}, config.Input.ServiceFiles)
+
+	// Test Diagram.D2 configuration from YAML
+	assert.Equal(t, int64(100), config.Diagram.D2.Pad)
+	assert.Equal(t, int64(1), config.Diagram.D2.Theme)
+	assert.True(t, config.Diagram.D2.Sketch)
+	assert.Equal(t, "SourceCodePro", config.Diagram.D2.Font)
+	assert.Equal(t, "elk", config.Diagram.D2.Layout)
 }
 
 func TestLoadConfig_FromEnv(t *testing.T) {
@@ -57,10 +77,13 @@ func TestLoadConfig_FromEnv(t *testing.T) {
 	yamlContent := `
 output:
   title: "YAML Title"
-  directory: "/tmp/yaml-output"
+  dir: "/tmp/yaml-output"
   global_name: "YAML Global"
 input:
   dir: "/tmp/yaml-input"
+diagram:
+  d2:
+    pad: 100
 `
 
 	tmpDir := t.TempDir()
@@ -72,9 +95,10 @@ input:
 	// Based on aconfig documentation, environment variables should match struct field names
 	envVars := map[string]string{
 		"HOLYDOCS_OUTPUT_TITLE":       "ENV Title",
-		"HOLYDOCS_OUTPUT_DIRECTORY":   "/tmp/env-output",
+		"HOLYDOCS_OUTPUT_DIR":         "/tmp/env-output",
 		"HOLYDOCS_OUTPUT_GLOBAL_NAME": "ENV Global",
-		"HOLYDOCS_INPUT_DIRECTORY":    "/tmp/env-input",
+		"HOLYDOCS_INPUT_DIR":          "/tmp/env-input",
+		"HOLYDOCS_DIAGRAM_D2_PAD":     "200",
 	}
 
 	// Set environment variables
@@ -89,7 +113,8 @@ input:
 
 	// Assert that environment variables override YAML values
 	assert.Equal(t, "ENV Title", config.Output.Title)
-	assert.Equal(t, "/tmp/env-output", config.Output.Directory)
+	assert.Equal(t, "/tmp/env-output", config.Output.Dir)
 	assert.Equal(t, "ENV Global", config.Output.GlobalName)
-	assert.Equal(t, "/tmp/env-input", config.Input.Directory)
+	assert.Equal(t, "/tmp/env-input", config.Input.Dir)
+	assert.Equal(t, int64(200), config.Diagram.D2.Pad)
 }

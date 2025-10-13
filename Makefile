@@ -25,7 +25,7 @@ docker: ## build docker image
 	docker build -t holydocs:latest .
 
 gen-test-docs: ## generate docs from testdata
-	go run cmd/holydocs/main.go gen-docs --dir pkg/schema --output generated
+	HOLYDOCS_INPUT_DIR=pkg/schema HOLYDOCS_OUTPUT_DIR=generated go run cmd/holydocs/main.go gen-docs
 
 # self documenting command
 help:

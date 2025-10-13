@@ -12,3 +12,15 @@ input:
   dir: "./specs"  # Directory to scan for AsyncAPI and ServiceFile specifications
   # asyncapi_files: ["specs/analytics.asyncapi.yaml", "specs/campaign.asyncapi.yaml"]
   # service_files: ["specs/analytics.servicefile.yml", "specs/campaign.servicefile.yaml"]
+
+# Diagram configuration
+diagram:
+  d2:
+    # Render settings
+    pad: 64                    # Padding around the diagram in pixels
+    theme: 3                   # Theme ID for the diagram
+    sketch: false              # Enable sketch mode for hand-drawn appearance
+    
+    # Font and layout settings
+    font: "SourceSansPro"      # Font family (SourceSansPro, SourceCodePro, HandDrawn)
+    layout: "elk"              # Layout engine (dagre, elk)

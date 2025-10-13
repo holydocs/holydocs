@@ -9,12 +9,14 @@ import (
 	"sort"
 	"strings"
 	"text/template"
-	"time"
 
+	"github.com/holydocs/holydocs/pkg/config"
 	"github.com/holydocs/holydocs/pkg/holydocs"
 	"oss.terrastruct.com/d2/d2graph"
+	"oss.terrastruct.com/d2/d2layouts/d2dagrelayout"
 	"oss.terrastruct.com/d2/d2layouts/d2elklayout"
 	"oss.terrastruct.com/d2/d2lib"
+	"oss.terrastruct.com/d2/d2renderers/d2fonts"
 	"oss.terrastruct.com/d2/d2renderers/d2svg"
 	"oss.terrastruct.com/d2/lib/log"
 	"oss.terrastruct.com/d2/lib/textmeasure"
@@ -44,26 +46,16 @@ const (
 	requestsLabel    = "requests"
 )
 
-// D2 diagram settings.
-const (
-	d2PadSize = 64
-)
-
-// Text formatting.
-const (
-	maxWordsPerLine = 7
-	wordsPerLine    = 7
-	wordsOffset     = 6
-)
-
 // Map capacity multipliers.
 const (
 	mapCapacityMultiplier = 2
 )
 
-// Timeouts.
+// Text formatting constants.
 const (
-	defaultRenderTimeout = 30 * time.Second
+	maxWordsPerLine = 7
+	wordsPerLine    = 7
+	wordsOffset     = 6
 )
 
 //go:embed templates/*.tmpl
@@ -77,10 +69,11 @@ type Target struct {
 	serviceRelationshipsTemplate *template.Template
 	systemTemplate               *template.Template
 	renderOpts                   *d2svg.RenderOpts
+	config                       config.D2Config
 }
 
-// NewTarget creates a new D2 target with default settings.
-func NewTarget() (*Target, error) {
+// NewTarget creates a new D2 target with the provided configuration.
+func NewTarget(cfg config.D2Config) (*Target, error) {
 	overviewTemplate, err := template.ParseFS(templatesFS, "templates/overview.tmpl")
 	if err != nil {
 		return nil, fmt.Errorf("%w %q: %w", ErrTemplateParsing, "templates/overview.tmpl", err)
@@ -96,17 +89,25 @@ func NewTarget() (*Target, error) {
 		return nil, fmt.Errorf("%w %q: %w", ErrTemplateParsing, "templates/system.tmpl", err)
 	}
 
+	renderOpts := &d2svg.RenderOpts{
+		Pad:  &cfg.Pad,
+		Font: cfg.Font,
+	}
+
+	if cfg.Theme != 0 {
+		renderOpts.ThemeID = &cfg.Theme
+	}
+
+	if cfg.Sketch {
+		renderOpts.Sketch = &cfg.Sketch
+	}
+
 	return &Target{
 		overviewTemplate:             overviewTemplate,
 		serviceRelationshipsTemplate: serviceRelationshipsTemplate,
 		systemTemplate:               systemTemplate,
-		renderOpts: &d2svg.RenderOpts{
-			Pad: func() *int64 {
-				p := int64(d2PadSize)
-
-				return &p
-			}(),
-		},
+		renderOpts:                   renderOpts,
+		config:                       cfg,
 	}, nil
 }
 
@@ -138,10 +139,6 @@ func (t *Target) RenderSchema(ctx context.Context, fs holydocs.FormattedSchema) 
 		return nil, fmt.Errorf("%w: %s, expected: %s", ErrUnsupportedFormatType, fs.Type, targetType)
 	}
 
-	// Add timeout handling
-	ctx, cancel := context.WithTimeout(ctx, defaultRenderTimeout)
-	defer cancel()
-
 	ctx = log.WithDefault(ctx)
 
 	// Create a new Ruler for each call since it's not thread-safe
@@ -150,13 +147,14 @@ func (t *Target) RenderSchema(ctx context.Context, fs holydocs.FormattedSchema) 
 		return nil, fmt.Errorf("creating ruler: %w", err)
 	}
 
-	layoutResolver := func(_ string) (d2graph.LayoutGraph, error) {
-		return d2elklayout.DefaultLayout, nil
-	}
+	layoutResolver := t.createLayoutResolver()
+	fontFamily := t.getFontFamily()
 
 	compileOpts := &d2lib.CompileOptions{
 		LayoutResolver: layoutResolver,
 		Ruler:          ruler,
+		FontFamily:     fontFamily,
+		Layout:         &t.config.Layout,
 	}
 
 	diagram, _, err := d2lib.Compile(ctx, string(fs.Data), compileOpts, t.renderOpts)
@@ -227,6 +225,36 @@ func formatOverviewDescription(description string) string {
 	}
 
 	return strings.Join(lines, "  \n")
+}
+
+func (t *Target) createLayoutResolver() func(string) (d2graph.LayoutGraph, error) {
+	return func(engine string) (d2graph.LayoutGraph, error) {
+		switch engine {
+		case "dagre":
+			return d2dagrelayout.DefaultLayout, nil
+		case "elk":
+			return d2elklayout.DefaultLayout, nil
+		default:
+			return nil, fmt.Errorf("unsupported layout engine: %s", engine)
+		}
+	}
+}
+
+func (t *Target) getFontFamily() *d2fonts.FontFamily {
+	var ff d2fonts.FontFamily
+
+	switch t.config.Font {
+	case "SourceSansPro":
+		ff = d2fonts.SourceSansPro
+	case "SourceCodePro":
+		ff = d2fonts.SourceCodePro
+	case "HandDrawn":
+		ff = d2fonts.HandDrawn
+	default:
+		ff = d2fonts.SourceSansPro
+	}
+
+	return &ff
 }
 
 func FormatDescription(description string) string {

@@ -79,7 +79,7 @@ func (c *Command) run(cmd *cobra.Command, _ []string) error {
 		return errors.New("configuration not found in context")
 	}
 
-	if err := c.prepareOutputDirectory(cfg.Output.Directory); err != nil {
+	if err := c.prepareOutputDirectory(cfg.Output.Dir); err != nil {
 		return fmt.Errorf("failed to prepare output directory: %w", err)
 	}
 
@@ -89,7 +89,7 @@ func (c *Command) run(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to generate documentation: %w", err)
 	}
 
-	fmt.Printf("Documentation generated successfully in: %s\n", cfg.Output.Directory)
+	fmt.Printf("Documentation generated successfully in: %s\n", cfg.Output.Dir)
 
 	return nil
 }
@@ -116,7 +116,7 @@ func (c *Command) generateDocumentation(ctx context.Context, cfg *config.Config)
 		return fmt.Errorf("loading schema from files: %w", err)
 	}
 
-	d2Target, err := d2.NewTarget()
+	d2Target, err := d2.NewTarget(cfg.Diagram.D2)
 	if err != nil {
 		return fmt.Errorf("creating D2 target: %w", err)
 	}
@@ -127,7 +127,7 @@ func (c *Command) generateDocumentation(ctx context.Context, cfg *config.Config)
 	}
 
 	newChangelog, err := docs.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target,
-		cfg.Output.Title, cfg.Output.GlobalName, cfg.Output.Directory)
+		cfg.Output.Title, cfg.Output.GlobalName, cfg.Output.Dir)
 	if err != nil {
 		return fmt.Errorf("generating documentation: %w", err)
 	}
@@ -179,8 +179,8 @@ func (c *Command) getSpecFilesPaths(cfg *config.Config) ([]string, []string, err
 		return cfg.Input.ServiceFiles, cfg.Input.AsyncAPIFiles, nil
 	}
 
-	if cfg.Input.Directory != "" {
-		return specFilesFromDir(cfg.Input.Directory)
+	if cfg.Input.Dir != "" {
+		return specFilesFromDir(cfg.Input.Dir)
 	}
 
 	return nil, nil, ErrNoSpecFilesProvided

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/holydocs/holydocs/pkg/config"
 	"github.com/holydocs/holydocs/pkg/holydocs"
 	"github.com/holydocs/holydocs/pkg/schema"
 	d2target "github.com/holydocs/holydocs/pkg/schema/target/d2"
@@ -71,7 +72,11 @@ func setupTestSchemasAndTargets(t *testing.T, ctx context.Context, asyncFiles, s
 		t.Fatalf("load holydocs schema: %v", err)
 	}
 
-	holydocsTarget, err := d2target.NewTarget()
+	holydocsTarget, err := d2target.NewTarget(config.D2Config{
+		Pad:    64,
+		Font:   "SourceSansPro",
+		Layout: "elk",
+	})
 	if err != nil {
 		t.Fatalf("create holydocs d2 target: %v", err)
 	}
