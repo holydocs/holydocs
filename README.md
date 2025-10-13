@@ -100,12 +100,48 @@ holydocs gen-docs --service-files "service1.servicefile.yaml,service2.servicefil
 
 ### Command Options
 
-- `--dir`: Directory containing ServiceFile and AsyncAPI specification files
-- `--service-files`: Comma-separated list of ServiceFile specification files
-- `--asyncapi-files`: Comma-separated list of AsyncAPI specification files
-- `--output`: Output directory for generated documentation
-- `--title`: Title for the generated documentation
-- `--global-name`: Name for the internal services container in diagrams
+- `--config`: Path to YAML configuration file
+
+### Configuration
+
+HolyDOCs supports flexible configuration through multiple sources with the following priority order:
+
+1. **Environment variables**
+2. **YAML configuration file** (lowest priority)
+
+#### Environment
+
+All environment variables use the `HOLYDOCS_` prefix:
+
+```bash
+# Output configuration
+export HOLYDOCS_OUTPUT_TITLE="My Service Architecture Documentation"
+export HOLYDOCS_OUTPUT_DIRECTORY="./docs"
+export HOLYDOCS_OUTPUT_GLOBAL_NAME="Internal Services"
+
+# Input configuration
+export HOLYDOCS_INPUT_DIRECTORY="./specs"
+```
+
+#### Configuration File
+
+Create a `holydocs.yaml` file in your project root or specify a custom path:
+
+```yaml
+# Output configuration
+output:
+  title: "My Service Architecture Documentation"
+  directory: "./docs"
+  global_name: "Internal Services"
+
+# Input configuration
+input:
+  dir: "./specs"  # Directory to scan for specifications
+  # asyncapi_files: ["specs/analytics.asyncapi.yaml"]
+  # service_files: ["specs/analytics.servicefile.yml"]
+```
+
+Full example can be found [here](holydocs.example.yaml).
 
 ## Roadmap
 
@@ -116,8 +152,8 @@ HolyDOCs is actively developed with the following features planned:
 - [x] **Changelog Integration**: Automatic changelog generation similar to MessageFlow, tracking changes in service specifications over time
 
 ### Extensibility
-- [ ] **Manual Extensibility**: Configuration file support for customizing documentation generation
-- [ ] **Markdown Integration**: Support for custom markdown content and templates
+- [x] **Manual Extensibility**: Configuration file support for customizing documentation generation
+- [] **Markdown Integration**: Support for custom markdown content and templates
 
 ### Deployment & Hosting
 - [ ] **Static HTML Generation**: Generate static HTML files for easy deployment

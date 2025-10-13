@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/holydocs/holydocs/internal/docs"
+	"github.com/holydocs/holydocs/pkg/config"
 	"github.com/holydocs/holydocs/pkg/schema"
 	"github.com/holydocs/holydocs/pkg/schema/target/d2"
 	"github.com/holydocs/messageflow/pkg/messageflow"
@@ -23,22 +24,6 @@ import (
 const (
 	dirPerm  = 0o755
 	filePerm = 0o644
-)
-
-// Command flag.
-const (
-	flagDir           = "dir"
-	flagAsyncAPIFiles = "asyncapi-files"
-	flagServiceFiles  = "servicefiles"
-	flagOutput        = "output"
-	flagTitle         = "title"
-	flagGlobalName    = "global-name"
-)
-
-// Default values.
-const (
-	defaultOutputDir = "."
-	defaultTitle     = "HolyDOCs"
 )
 
 // Custom error types.
@@ -59,26 +44,28 @@ func NewCommand() *Command {
 
 	c.cmd = &cobra.Command{
 		Use:   "gen-docs",
-		Short: "Generate documentation",
-		Long: `Generate comprehensive documentation from ServiceFile/AsyncAPI.
-Example:
-  holydocs gen --dir ./specs --output ./docs`,
+		Short: "Generate system architecture documentation",
+		Long: `Generate comprehensive documentation from ServiceFile and AsyncAPI specifications.
+
+This command creates system architecture diagrams, service relationship maps, and 
+message flow diagrams from your API specifications.
+
+Input Sources:
+  - Directory scanning: Automatically finds AsyncAPI and ServiceFile files
+  - Specific files: Provide exact file paths for AsyncAPI and ServiceFile specs
+
+Output:
+  - D2 diagrams showing service relationships and message flows
+  - README.md with system overview
+  - JSON metadata
+
+Examples:
+  # Use configuration file
+  holydocs gen-docs --config ./holydocs.yaml`,
 		RunE: c.run,
 	}
 
-	c.setupFlags()
-
 	return c
-}
-
-// setupFlags configures the command flags.
-func (c *Command) setupFlags() {
-	c.cmd.Flags().String(flagDir, "", "Path to dir to scan spec files automatically")
-	c.cmd.Flags().String(flagAsyncAPIFiles, "", "Paths to asyncapi files separated by comma")
-	c.cmd.Flags().String(flagServiceFiles, "", "Paths to servicefiles separated by comma")
-	c.cmd.Flags().String(flagOutput, defaultOutputDir, "Output directory for generated documentation")
-	c.cmd.Flags().String(flagTitle, defaultTitle, "Title of the documentation")
-	c.cmd.Flags().String(flagGlobalName, "", "Custom name for internal services container (default: 'Internal Services')")
 }
 
 // GetCommand returns the cobra command.
@@ -87,79 +74,22 @@ func (c *Command) GetCommand() *cobra.Command {
 }
 
 func (c *Command) run(cmd *cobra.Command, _ []string) error {
-	config, err := c.parseFlags(cmd)
-	if err != nil {
-		return fmt.Errorf("failed to parse command flags: %w", err)
+	cfg, ok := config.GetFromContext(cmd.Context())
+	if !ok {
+		return errors.New("configuration not found in context")
 	}
 
-	if err := c.validateConfig(config); err != nil {
-		return fmt.Errorf("invalid configuration: %w", err)
-	}
-
-	if err := c.prepareOutputDirectory(config.OutputDir); err != nil {
+	if err := c.prepareOutputDirectory(cfg.Output.Directory); err != nil {
 		return fmt.Errorf("failed to prepare output directory: %w", err)
 	}
 
 	ctx := context.Background()
 
-	if err := c.generateDocumentation(ctx, config); err != nil {
+	if err := c.generateDocumentation(ctx, cfg); err != nil {
 		return fmt.Errorf("failed to generate documentation: %w", err)
 	}
 
-	fmt.Printf("Documentation generated successfully in: %s\n", config.OutputDir)
-
-	return nil
-}
-
-// CommandConfig holds the parsed command configuration.
-type CommandConfig struct {
-	Title              string
-	GlobalName         string
-	ServiceFilesPaths  []string
-	AsyncAPIFilesPaths []string
-	OutputDir          string
-}
-
-// parseFlags extracts and validates command flags.
-func (c *Command) parseFlags(cmd *cobra.Command) (*CommandConfig, error) {
-	title, err := cmd.Flags().GetString(flagTitle)
-	if err != nil {
-		return nil, fmt.Errorf("getting title flag: %w", err)
-	}
-
-	globalName, err := cmd.Flags().GetString(flagGlobalName)
-	if err != nil {
-		return nil, fmt.Errorf("getting global-name flag: %w", err)
-	}
-
-	outputDir, err := cmd.Flags().GetString(flagOutput)
-	if err != nil {
-		return nil, fmt.Errorf("getting output flag: %w", err)
-	}
-
-	serviceFilesPaths, asyncAPIFilesPaths, err := getSpecFilesPaths(cmd)
-	if err != nil {
-		return nil, fmt.Errorf("getting spec files paths: %w", err)
-	}
-
-	return &CommandConfig{
-		Title:              title,
-		GlobalName:         globalName,
-		ServiceFilesPaths:  serviceFilesPaths,
-		AsyncAPIFilesPaths: asyncAPIFilesPaths,
-		OutputDir:          outputDir,
-	}, nil
-}
-
-// validateConfig validates the command configuration.
-func (c *Command) validateConfig(config *CommandConfig) error {
-	if config.Title == "" {
-		return errors.New("title cannot be empty")
-	}
-
-	if config.OutputDir == "" {
-		return errors.New("output directory cannot be empty")
-	}
+	fmt.Printf("Documentation generated successfully in: %s\n", cfg.Output.Directory)
 
 	return nil
 }
@@ -174,8 +104,14 @@ func (c *Command) prepareOutputDirectory(outputDir string) error {
 }
 
 // generateDocumentation generates the documentation using the provided configuration.
-func (c *Command) generateDocumentation(ctx context.Context, config *CommandConfig) error {
-	s, err := schema.Load(ctx, config.ServiceFilesPaths, config.AsyncAPIFilesPaths)
+func (c *Command) generateDocumentation(ctx context.Context, cfg *config.Config) error {
+	// Get file paths from config
+	serviceFilesPaths, asyncAPIFilesPaths, err := c.getSpecFilesPaths(cfg)
+	if err != nil {
+		return fmt.Errorf("getting spec files paths: %w", err)
+	}
+
+	s, err := schema.Load(ctx, serviceFilesPaths, asyncAPIFilesPaths)
 	if err != nil {
 		return fmt.Errorf("loading schema from files: %w", err)
 	}
@@ -185,13 +121,13 @@ func (c *Command) generateDocumentation(ctx context.Context, config *CommandConf
 		return fmt.Errorf("creating D2 target: %w", err)
 	}
 
-	mfSetup, err := c.setupMessageFlowTarget(ctx, config.AsyncAPIFilesPaths)
+	mfSetup, err := c.setupMessageFlowTarget(ctx, asyncAPIFilesPaths)
 	if err != nil {
 		return fmt.Errorf("setting up message flow target: %w", err)
 	}
 
-	newChangelog, err := docs.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target, config.Title, config.GlobalName,
-		config.OutputDir)
+	newChangelog, err := docs.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target,
+		cfg.Output.Title, cfg.Output.GlobalName, cfg.Output.Directory)
 	if err != nil {
 		return fmt.Errorf("generating documentation: %w", err)
 	}
@@ -237,59 +173,17 @@ func (c *Command) setupMessageFlowTarget(ctx context.Context, asyncAPIFilesPaths
 	}, nil
 }
 
-func getSpecFilesPaths(cmd *cobra.Command) ([]string, []string, error) {
-	specDir, err := cmd.Flags().GetString(flagDir)
-	if err != nil {
-		return nil, nil, fmt.Errorf("getting dir flag: %w", err)
+// getSpecFilesPaths extracts file paths from the configuration.
+func (c *Command) getSpecFilesPaths(cfg *config.Config) ([]string, []string, error) {
+	if len(cfg.Input.ServiceFiles) != 0 || len(cfg.Input.AsyncAPIFiles) != 0 {
+		return cfg.Input.ServiceFiles, cfg.Input.AsyncAPIFiles, nil
 	}
 
-	if specDir != "" {
-		return specFilesFromDir(specDir)
+	if cfg.Input.Directory != "" {
+		return specFilesFromDir(cfg.Input.Directory)
 	}
 
-	asyncAPIFilesPathsStr, err := cmd.Flags().GetString(flagAsyncAPIFiles)
-	if err != nil {
-		return nil, nil, fmt.Errorf("getting asyncapi-files flag: %w", err)
-	}
-
-	serviceFilesPathsStr, err := cmd.Flags().GetString(flagServiceFiles)
-	if err != nil {
-		return nil, nil, fmt.Errorf("getting servicefiles flag: %w", err)
-	}
-
-	asyncPaths := splitAndCleanPaths(asyncAPIFilesPathsStr)
-	servicePaths := splitAndCleanPaths(serviceFilesPathsStr)
-
-	if len(asyncPaths) == 0 && len(servicePaths) == 0 {
-		return nil, nil, ErrNoSpecFilesProvided
-	}
-
-	return servicePaths, asyncPaths, nil
-}
-
-func splitAndCleanPaths(value string) []string {
-	if strings.TrimSpace(value) == "" {
-		return nil
-	}
-
-	items := strings.Split(value, ",")
-	clean := make([]string, 0, len(items))
-	seen := make(map[string]struct{}, len(items))
-	for _, item := range items {
-		trimmed := strings.TrimSpace(item)
-		if trimmed == "" {
-			continue
-		}
-		if _, exists := seen[trimmed]; exists {
-			continue
-		}
-		seen[trimmed] = struct{}{}
-		clean = append(clean, trimmed)
-	}
-
-	sort.Strings(clean)
-
-	return clean
+	return nil, nil, ErrNoSpecFilesProvided
 }
 
 func specFilesFromDir(dir string) ([]string, []string, error) {

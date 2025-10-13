@@ -3,6 +3,8 @@ module github.com/holydocs/holydocs
 go 1.23.10
 
 require (
+	github.com/cristalhq/aconfig v0.19.0
+	github.com/cristalhq/aconfig/aconfigyaml v0.17.1
 	github.com/google/go-cmp v0.7.0
 	github.com/holydocs/messageflow v0.2.0
 	github.com/holydocs/servicefile v0.0.0-20251006151544-23bdb592faaa
@@ -28,16 +30,17 @@ require (
 	github.com/lerenn/asyncapi-codegen v0.46.2 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mazznoer/csscolorparser v0.1.5 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/spf13/pflag v1.0.9 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/yuin/goldmark v1.7.12 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/image v0.28.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/plot v0.14.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

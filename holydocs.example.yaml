@@ -1,0 +1,14 @@
+# HolyDOCs Configuration File
+# This file demonstrates the configuration options available for HolyDOCs
+
+# Output configuration
+output:
+  title: "My Service Architecture Documentation"
+  directory: "./docs"
+  global_name: "Internal Services"
+
+# Input configuration
+input:
+  dir: "./specs"  # Directory to scan for AsyncAPI and ServiceFile specifications
+  # asyncapi_files: ["specs/analytics.asyncapi.yaml", "specs/campaign.asyncapi.yaml"]
+  # service_files: ["specs/analytics.servicefile.yml", "specs/campaign.servicefile.yaml"]

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 
 	"github.com/holydocs/holydocs/cmd/holydocs/commands/docs"
+	"github.com/holydocs/holydocs/pkg/config"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +34,10 @@ func main() {
 func run() error {
 	rootCmd := buildRootCommand()
 
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
+		return loadConfig(cmd)
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		return fmt.Errorf("%w: %w", ErrCommandExecution, err)
 	}
@@ -47,7 +53,27 @@ func buildRootCommand() *cobra.Command {
 		Long:  appLongDesc,
 	}
 
+	rootCmd.PersistentFlags().StringP("config", "c", "holydocs.yaml", "Path to YAML configuration file")
+
 	rootCmd.AddCommand(docs.NewCommand().GetCommand())
 
 	return rootCmd
+}
+
+// loadConfig loads configuration and stores it in the command context.
+func loadConfig(cmd *cobra.Command) error {
+	configFile, err := cmd.Flags().GetString("config")
+	if err != nil {
+		return fmt.Errorf("getting config file flag: %w", err)
+	}
+
+	cfg, err := config.Load(context.Background(), configFile)
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	ctx := config.WithContext(cmd.Context(), cfg)
+	cmd.SetContext(ctx)
+
+	return nil
 }
