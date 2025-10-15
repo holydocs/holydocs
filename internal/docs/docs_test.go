@@ -27,15 +27,35 @@ import (
 func TestGenerateDocs(t *testing.T) {
 	t.Parallel()
 
+	overwrite := os.Getenv("OVERWRITE_TESTDATA") == "true"
+
 	ctx := context.Background()
 	asyncFiles, serviceFiles := getTestDataFiles()
 	holydocsSchema, holydocsTarget, mfSchema, mfTarget := setupTestSchemasAndTargets(t, ctx, asyncFiles, serviceFiles)
-	outputDir := filepath.Join(t.TempDir(), "docs")
+	var outputDir string
+	if overwrite {
+		outputDir = filepath.Join("testdata", "expected")
+	} else {
+		outputDir = filepath.Join(t.TempDir(), "docs")
+	}
 
-	_, err := Generate(ctx, holydocsSchema, holydocsTarget, mfSchema, mfTarget, "HolyDOCs",
-		"Internal Services", outputDir)
+	// Load test configuration to get documentation settings
+	configPath := filepath.Join("testdata", "holydocs.test.yaml")
+	cfg, err := config.Load(ctx, configPath)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	// Update the config to use the test output directory
+	cfg.Output.Dir = outputDir
+
+	_, err = Generate(ctx, holydocsSchema, holydocsTarget, mfSchema, mfTarget, cfg)
 	if err != nil {
 		t.Fatalf("generate docs: %v", err)
+	}
+
+	if overwrite {
+		return
 	}
 
 	validateGeneratedFiles(t, outputDir)

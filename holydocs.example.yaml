@@ -4,7 +4,7 @@
 # Output configuration
 output:
   title: "My Service Architecture Documentation"
-  directory: "./docs"
+  dir: "./docs"
   global_name: "Internal Services"
 
 # Input configuration
@@ -24,3 +24,83 @@ diagram:
     # Font and layout settings
     font: "SourceSansPro"      # Font family (SourceSansPro, SourceCodePro, HandDrawn)
     layout: "elk"              # Layout engine (dagre, elk)
+
+# Documentation configuration
+# Extend generated documentation with custom markdown content
+documentation:
+  # Overview markdown content placed after the overview diagram
+  overview:
+    description:
+      # Option 1: Raw markdown content
+      content: |
+        # Architecture Overview
+        
+        This document describes the architecture of our microservices system.
+        
+        ## Key Components
+        - **User Service**: Handles user management and authentication
+        - **Analytics Service**: Processes and analyzes user data
+        - **Notification Service**: Manages push notifications and alerts
+        
+        ## Design Principles
+        - Event-driven architecture
+        - Microservices with clear boundaries
+        - Async communication via message queues
+      # Option 2: Reference to a markdown file (use either content OR file_path, not both)
+      # file_path: "./docs/overview.md"
+  
+  # Service-specific documentation placed after service relationship diagrams
+  services:
+    user-service:
+      summary:
+        content: "User Service handles user management, authentication, and authorization."
+      description:
+        content: |
+          # User Service
+          
+          The User Service is responsible for user management, authentication, and authorization.
+          
+          ## Key Features
+          - User registration and login
+          - JWT token management
+          - User profile management
+          - Role-based access control
+          
+          ## API Endpoints
+          - `POST /users` - Create new user
+          - `GET /users/{id}` - Get user details
+          - `PUT /users/{id}` - Update user information
+    
+    analytics-service:
+      summary:
+        content: "Analytics Service processes and analyzes user data."
+      description:
+        file_path: "./docs/services/analytics-service.md"
+  
+  # System-specific documentation placed after system diagrams
+  systems:
+    notification-system:
+      summary:
+        content: "Notification System handles all outbound communications to users."
+      description:
+        content: |
+          # Notification System
+          
+          The Notification System handles all outbound communications to users.
+          
+          ## Components
+          - **Email Service**: Sends transactional and marketing emails
+          - **Push Service**: Manages mobile push notifications
+          - **SMS Service**: Handles SMS notifications
+          
+          ## Message Flow
+          1. Events are published to the notification queue
+          2. Notification service processes events
+          3. Appropriate notification channel is selected
+          4. Message is sent to the user
+    
+    analytics-system:
+      summary:
+        content: "Analytics System processes and analyzes data across services."
+      description:
+        file_path: "./docs/systems/analytics-system.md"

@@ -205,7 +205,7 @@ func sanitizeFilename(name string) string {
 	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(name, " ", "-"), "_", "-"))
 }
 
-func formatOverviewDescription(description string) string {
+func FormatOverviewDescription(description string) string {
 	if description == "" {
 		return ""
 	}
@@ -1213,7 +1213,7 @@ func getOrCreateTargetNode(rel holydocs.Relationship, serviceToNode map[string]O
 				Label:    rel.Participant,
 				External: true,       // Both persons and external services are external
 				Person:   rel.Person, // Mark as person if it's a person
-				Content:  formatOverviewDescription(rel.Description),
+				Content:  FormatOverviewDescription(rel.Description),
 			}
 			nodes[nodeID] = node
 		}
@@ -1408,7 +1408,7 @@ func getOrCreateExternalNode(rel holydocs.Relationship, nodes map[string]SystemD
 		node = SystemDocsNode{
 			ID:       nodeID,
 			Label:    rel.Participant,
-			Content:  formatOverviewDescription(rel.Description),
+			Content:  FormatOverviewDescription(rel.Description),
 			External: true,
 			Person:   rel.Person,
 		}
@@ -1569,7 +1569,7 @@ func getOrCreatePersonNode(rel holydocs.Relationship, nodes map[string]SystemDoc
 		node = SystemDocsNode{
 			ID:       nodeID,
 			Label:    rel.Participant,
-			Content:  formatOverviewDescription(rel.Description),
+			Content:  FormatOverviewDescription(rel.Description),
 			External: true,
 			Person:   true,
 		}
@@ -1677,7 +1677,7 @@ func buildOverviewNodeContent(info holydocs.ServiceInfo) string {
 		return ""
 	}
 
-	return formatOverviewDescription(description)
+	return FormatOverviewDescription(description)
 }
 
 func buildOverviewPayload(payload *OverviewDocsPayload, nodes map[string]OverviewDocsNode,

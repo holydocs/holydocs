@@ -30,6 +30,10 @@
 
 ![Overview]({{ .OverviewDiagram }})
 
+{{- if .OverviewMarkdown }}
+{{ .OverviewMarkdown }}
+{{- end }}
+
 ## Services
 
 {{- range .Systems }}
@@ -38,6 +42,11 @@
 {{- $systemDiagram := index $.SystemDiagrams .Name }}
 {{- if and $systemDiagram $systemDiagram.SystemDiagram $systemDiagram.SystemD2 }}
 ![{{ .Name }}]({{ $systemDiagram.SystemDiagram }})
+
+{{- end }}
+{{- $systemMarkdown := index $.SystemMarkdowns .Name }}
+{{- if $systemMarkdown }}
+{{ $systemMarkdown }}
 
 {{- end }}
 {{- range .Services }}

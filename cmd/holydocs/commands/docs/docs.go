@@ -126,8 +126,7 @@ func (c *Command) generateDocumentation(ctx context.Context, cfg *config.Config)
 		return fmt.Errorf("setting up message flow target: %w", err)
 	}
 
-	newChangelog, err := docs.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target,
-		cfg.Output.Title, cfg.Output.GlobalName, cfg.Output.Dir)
+	newChangelog, err := docs.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target, cfg)
 	if err != nil {
 		return fmt.Errorf("generating documentation: %w", err)
 	}

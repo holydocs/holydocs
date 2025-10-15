@@ -52,7 +52,7 @@ You'll need:
 
 3. **Generate documentation**:
    ```bash
-   holydocs gen-docs --dir ./specs --output ./docs --title "My Service Architecture"
+   holydocs gen-docs
    ```
 
 4. **View the results**:
@@ -88,14 +88,8 @@ docker run --rm -v $(pwd):/work -w /work ghcr.io/holydocs/holydocs:latest gen-do
 The `gen-docs` command generates comprehensive markdown documentation from ServiceFile and AsyncAPI specifications:
 
 ```bash
-# Generate documentation from a directory containing spec files
-holydocs gen-docs --dir ./specs --output ./docs
-
-# Generate with custom title and global name
-holydocs gen-docs --dir ./specs --output ./docs --title "My Service Architecture" --global-name "Internal Services"
-
-# Specify individual files
-holydocs gen-docs --service-files "service1.servicefile.yaml,service2.servicefile.yaml" --asyncapi-files "service1.asyncapi.yaml,service2.asyncapi.yaml" --output ./docs
+# Generate documentation from a directory containing spec files to docs dir
+holydocs gen-docs
 ```
 
 ### Command Options
@@ -116,11 +110,20 @@ All environment variables use the `HOLYDOCS_` prefix:
 ```bash
 # Output configuration
 export HOLYDOCS_OUTPUT_TITLE="My Service Architecture Documentation"
-export HOLYDOCS_OUTPUT_DIRECTORY="./docs"
+export HOLYDOCS_OUTPUT_DIR="./docs"
 export HOLYDOCS_OUTPUT_GLOBAL_NAME="Internal Services"
 
 # Input configuration
-export HOLYDOCS_INPUT_DIRECTORY="./specs"
+export HOLYDOCS_INPUT_DIR="./specs"
+export HOLYDOCS_INPUT_ASYNCAPI_FILES="specs/analytics.asyncapi.yaml,specs/campaign.asyncapi.yaml"
+export HOLYDOCS_INPUT_SERVICE_FILES="specs/analytics.servicefile.yml,specs/campaign.servicefile.yaml"
+
+# Diagram configuration (D2)
+export HOLYDOCS_DIAGRAM_D2_PAD="64"
+export HOLYDOCS_DIAGRAM_D2_THEME="0"
+export HOLYDOCS_DIAGRAM_D2_SKETCH="false"
+export HOLYDOCS_DIAGRAM_D2_FONT="SourceSansPro"
+export HOLYDOCS_DIAGRAM_D2_LAYOUT="elk"
 ```
 
 #### Configuration File
@@ -131,15 +134,82 @@ Create a `holydocs.yaml` file in your project root or specify a custom path:
 # Output configuration
 output:
   title: "My Service Architecture Documentation"
-  directory: "./docs"
+  dir: "./docs"
   global_name: "Internal Services"
 
 # Input configuration
 input:
   dir: "./specs"  # Directory to scan for specifications
-  # asyncapi_files: ["specs/analytics.asyncapi.yaml"]
-  # service_files: ["specs/analytics.servicefile.yml"]
+  asyncapi_files: ["specs/analytics.asyncapi.yaml", "specs/campaign.asyncapi.yaml"]
+  service_files: ["specs/analytics.servicefile.yml", "specs/campaign.servicefile.yaml"]
+
+# Diagram configuration
+diagram:
+  d2:
+    # Render settings
+    pad: 64                    # Padding around diagrams in pixels
+    theme: 0                   # Theme ID (0 for default, -1 for dark)
+    sketch: false              # Enable sketch mode for hand-drawn appearance
+    
+    # Font and layout settings
+    font: "SourceSansPro"      # Font family (SourceSansPro, SourceCodePro, HandDrawn)
+    layout: "elk"              # Layout engine (dagre, elk)
+
+# Documentation configuration
+documentation:
+  overview:
+    description:
+      content: "# Custom Overview\nThis is custom content for the overview section."
+      # file_path: "./docs/overview.md"  # Alternative: load from file
+  
+  services:
+    analytics:
+      summary:
+        content: "Analytics service handles data processing and insights."
+      description:
+        content: "Detailed description of the analytics service..."
+        # file_path: "./docs/analytics-service.md"  # Alternative: load from file
+  
+  systems:
+    notification-system:
+      summary:
+        content: "Notification system manages user communications."
+      description:
+        file_path: "./docs/notification-system.md"
 ```
+
+#### Configuration Options
+
+**Input Configuration:**
+- `input.dir`: Directory to scan for AsyncAPI and ServiceFile specifications
+- `input.asyncapi_files`: Explicit list of AsyncAPI specification files
+- `input.service_files`: Explicit list of ServiceFile specification files
+
+**Output Configuration:**
+- `output.dir`: Directory where generated documentation will be saved
+- `output.title`: Title for the generated documentation
+- `output.global_name`: Name used for grouping internal services in diagrams
+
+**Diagram Configuration (D2):**
+- `diagram.d2.pad`: Padding around diagrams in pixels (default: 64)
+- `diagram.d2.theme`: Theme ID for diagrams (0 for default, -1 for dark)
+- `diagram.d2.sketch`: Enable sketch mode for hand-drawn appearance
+- `diagram.d2.font`: Font family for diagram text (SourceSansPro, SourceCodePro, HandDrawn)
+- `diagram.d2.layout`: Layout engine for diagram arrangement (dagre, elk)
+
+**Documentation Configuration:**
+- `documentation.overview.description`: Custom markdown content for the overview section
+- `documentation.services.{service_name}.summary`: Summary text for specific services
+- `documentation.services.{service_name}.description`: Detailed description for specific services
+- `documentation.systems.{system_name}.summary`: Summary text for specific systems
+- `documentation.systems.{system_name}.description`: Detailed description for specific systems
+
+**Markdown Content:**
+Each markdown field supports two formats:
+- `content`: Raw markdown content as a string
+- `file_path`: Path to a markdown file to load content from
+
+You cannot specify both `content` and `file_path` for the same field.
 
 Full example can be found [here](holydocs.example.yaml).
 
@@ -153,7 +223,7 @@ HolyDOCs is actively developed with the following features planned:
 
 ### Extensibility
 - [x] **Manual Extensibility**: Configuration file support for customizing documentation generation
-- [] **Markdown Integration**: Support for custom markdown content and templates
+- [x] **Markdown Integration**: Support for custom markdown content and templates
 
 ### Deployment & Hosting
 - [ ] **Static HTML Generation**: Generate static HTML files for easy deployment

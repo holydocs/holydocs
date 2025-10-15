@@ -1,4 +1,4 @@
-# HolyDOCs
+# HolyDOCs Test Documentation
 
 ## Table of Contents
 
@@ -51,9 +51,43 @@
 
 ![Overview](diagrams/overview.svg)
 
+### Design Principles
+- **Event-driven architecture**: Services communicate through async message queues
+- **Microservices with clear boundaries**: Each service has a single responsibility
+- **Async communication**: All inter-service communication is asynchronous
+- **Data-driven insights**: Analytics service provides real-time insights and reporting
+
+### Technology Stack
+- **Message Queues**: AsyncAPI for event-driven communication
+- **Databases**: ClickHouse for analytics, PostgreSQL for transactional data
+- **External Services**: SendGrid for email, Firebase for push notifications
+- **Monitoring**: Built-in analytics and reporting capabilities
+
+
 ## Services
 ### Analytics System
 ![Analytics System](diagrams/system-analytics-system.svg)
+#### Key Metrics Tracked
+
+##### User Behavior
+- User registration and login events
+- Profile updates and preference changes
+- Feature usage and engagement patterns
+
+##### Notification Performance
+- Delivery rates and success metrics
+- Open and click-through rates
+- User engagement with notifications
+
+##### Campaign Effectiveness
+- Campaign creation and execution metrics
+- User response rates and conversions
+- A/B testing results and performance
+
+##### System Health
+- Service performance and response times
+- Error rates and system availability
+- Resource utilization and capacity metrics
 #### Analytics Service
 A centralized analytics service that receives and processes analytics events from all other services. Provides insights, reporting, and analytics data aggregation for user behavior, notification performance, campaign effectiveness, and system-wide metrics.
 - System: Analytics System
@@ -108,6 +142,13 @@ _No relationships documented._
 - requests to Analytics Service (req)
 ### Notification System
 ![Notification System](diagrams/system-notification-system.svg)
+
+#### Key Features
+- **Multi-channel support**: Email, push notifications, SMS
+- **User preferences**: Respects user notification preferences and quiet hours
+- **Batch processing**: Efficient handling of large notification volumes
+- **Real-time delivery**: Push notifications for immediate user engagement
+- **Analytics integration**: Full tracking of notification performance and user engagement
 #### Mailer Service
 A service that handles email delivery through SendGrid. Receives email requests from other services and processes them for delivery. Supports various email types including transactional emails, notifications, and marketing campaigns.
 - System: Notification System

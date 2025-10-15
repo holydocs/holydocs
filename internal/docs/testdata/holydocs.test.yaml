@@ -1,0 +1,56 @@
+# Test configuration for HolyDOCs with documentation markdown
+output:
+  title: "HolyDOCs Test Documentation"
+  dir: "internal/docs/testdata/expected"
+  global_name: "Internal Services"
+
+input:
+  dir: "pkg/schema/testdata"
+
+diagram:
+  d2:
+    pad: 64
+    theme: 0
+    sketch: false
+    font: "SourceSansPro"
+    layout: "elk"
+
+# Documentation configuration with markdown content
+documentation:
+  # Overview markdown content placed after the overview diagram
+  overview:
+    description:
+      content: |
+
+        ### Design Principles
+        - **Event-driven architecture**: Services communicate through async message queues
+        - **Microservices with clear boundaries**: Each service has a single responsibility
+        - **Async communication**: All inter-service communication is asynchronous
+        - **Data-driven insights**: Analytics service provides real-time insights and reporting
+        
+        ### Technology Stack
+        - **Message Queues**: AsyncAPI for event-driven communication
+        - **Databases**: ClickHouse for analytics, PostgreSQL for transactional data
+        - **External Services**: SendGrid for email, Firebase for push notifications
+        - **Monitoring**: Built-in analytics and reporting capabilities
+  
+  # System-specific documentation placed after system diagrams
+  systems:
+    "Analytics System":
+      summary:
+        content: "Centralized analytics system for data collection, processing, and insights generation"
+      description:
+        filePath: "testdata/docs/systems/analytics-system.md"
+    
+    "Notification System":
+      summary:
+        content: "Comprehensive notification system managing all outbound communications to users"
+      description:
+        content: |
+
+          #### Key Features
+          - **Multi-channel support**: Email, push notifications, SMS
+          - **User preferences**: Respects user notification preferences and quiet hours
+          - **Batch processing**: Efficient handling of large notification volumes
+          - **Real-time delivery**: Push notifications for immediate user engagement
+          - **Analytics integration**: Full tracking of notification performance and user engagement
