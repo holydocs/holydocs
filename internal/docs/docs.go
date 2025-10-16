@@ -13,9 +13,9 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/holydocs/holydocs/pkg/config"
-	"github.com/holydocs/holydocs/pkg/holydocs"
-	d2target "github.com/holydocs/holydocs/pkg/schema/target/d2"
+	"github.com/holydocs/holydocs/internal/config"
+	"github.com/holydocs/holydocs/internal/holydocs"
+	d2target "github.com/holydocs/holydocs/internal/schema/target/d2"
 	mf "github.com/holydocs/messageflow/pkg/messageflow"
 )
 

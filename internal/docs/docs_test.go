@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/holydocs/holydocs/pkg/config"
-	"github.com/holydocs/holydocs/pkg/holydocs"
-	"github.com/holydocs/holydocs/pkg/schema"
-	d2target "github.com/holydocs/holydocs/pkg/schema/target/d2"
+	"github.com/holydocs/holydocs/internal/config"
+	"github.com/holydocs/holydocs/internal/holydocs"
+	"github.com/holydocs/holydocs/internal/schema"
+	d2target "github.com/holydocs/holydocs/internal/schema/target/d2"
 	mf "github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
 	mfd2 "github.com/holydocs/messageflow/pkg/schema/target/d2"
@@ -62,7 +62,7 @@ func TestGenerateDocs(t *testing.T) {
 }
 
 func getTestDataFiles() ([]string, []string) {
-	testdataDir := filepath.Join("..", "..", "pkg", "schema", "testdata")
+	testdataDir := filepath.Join("..", "..", "internal", "schema", "testdata")
 
 	asyncFiles := []string{
 		filepath.Join(testdataDir, "analytics.asyncapi.yaml"),

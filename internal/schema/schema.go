@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/holydocs/holydocs/pkg/holydocs"
+	"github.com/holydocs/holydocs/internal/holydocs"
 	"github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
 	"github.com/holydocs/servicefile/pkg/servicefile"

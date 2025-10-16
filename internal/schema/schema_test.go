@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/holydocs/holydocs/pkg/holydocs"
+	"github.com/holydocs/holydocs/internal/holydocs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

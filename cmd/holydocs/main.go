@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/holydocs/holydocs/cmd/holydocs/commands/docs"
-	"github.com/holydocs/holydocs/pkg/config"
+	"github.com/holydocs/holydocs/internal/config"
 	"github.com/spf13/cobra"
 )
 

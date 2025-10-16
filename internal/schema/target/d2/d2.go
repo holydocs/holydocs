@@ -10,8 +10,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/holydocs/holydocs/pkg/config"
-	"github.com/holydocs/holydocs/pkg/holydocs"
+	"github.com/holydocs/holydocs/internal/config"
+	"github.com/holydocs/holydocs/internal/holydocs"
 	"oss.terrastruct.com/d2/d2graph"
 	"oss.terrastruct.com/d2/d2layouts/d2dagrelayout"
 	"oss.terrastruct.com/d2/d2layouts/d2elklayout"
