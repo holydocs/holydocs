@@ -67,6 +67,9 @@ linters:
       - std-error-handling
     rules:
       - linters:
+          - ireturn
+        path: _test\.go
+      - linters:
           - structcheck
           - unused
         text: '`data` is unused'

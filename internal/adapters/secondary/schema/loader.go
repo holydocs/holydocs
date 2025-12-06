@@ -11,6 +11,7 @@ import (
 	"github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
 	"github.com/holydocs/servicefile/pkg/servicefile"
+	do "github.com/samber/do/v2"
 )
 
 // Errors.
@@ -24,10 +25,12 @@ type Loader struct {
 	app *app.App
 }
 
-func NewLoader(app *app.App) *Loader {
+func NewLoader(i do.Injector) (*Loader, error) {
+	appInstance := do.MustInvoke[*app.App](i)
+
 	return &Loader{
-		app: app,
-	}
+		app: appInstance,
+	}, nil
 }
 
 // Load loads schemas from ServiceFile and AsyncAPI files and merges them.

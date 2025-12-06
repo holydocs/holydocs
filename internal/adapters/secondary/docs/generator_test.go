@@ -21,9 +21,19 @@ import (
 	mf "github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
 	mfd2 "github.com/holydocs/messageflow/pkg/schema/target/d2"
+	do "github.com/samber/do/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func setupTestInjector() do.Injector {
+	injector := do.New()
+	do.Provide(injector, func(i do.Injector) (*app.App, error) {
+		return app.NewApp(), nil
+	})
+
+	return injector
+}
 
 func TestGenerateDocs(t *testing.T) {
 	t.Parallel()
@@ -50,8 +60,9 @@ func TestGenerateDocs(t *testing.T) {
 	// Update the config to use the test output directory
 	cfg.Output.Dir = outputDir
 
-	app := app.NewApp()
-	generator := NewGenerator(app)
+	injector := setupTestInjector()
+	generator, err := NewGenerator(injector)
+	require.NoError(t, err)
 	_, err = generator.Generate(ctx, holydocsSchema, holydocsTarget, mfSchema, mfTarget, cfg)
 	if err != nil {
 		t.Fatalf("generate docs: %v", err)
@@ -90,8 +101,12 @@ func getTestDataFiles() ([]string, []string) {
 
 func setupTestSchemasAndTargets(t *testing.T, ctx context.Context, asyncFiles, serviceFiles []string) (
 	domain.Schema, *d2target.Target, mf.Schema, *mfd2.Target) {
-	app := app.NewApp()
-	loader := schema.NewLoader(app)
+	injector := do.New()
+	do.Provide(injector, func(i do.Injector) (*app.App, error) {
+		return app.NewApp(), nil
+	})
+	loader, err := schema.NewLoader(injector)
+	require.NoError(t, err)
 	holydocsSchema, err := loader.Load(ctx, serviceFiles, asyncFiles)
 	if err != nil {
 		t.Fatalf("load holydocs schema: %v", err)
@@ -132,8 +147,9 @@ func TestProcessMetadata_FirstRun(t *testing.T) {
 		},
 	}
 
-	app := app.NewApp()
-	generator := NewGenerator(app)
+	injector := setupTestInjector()
+	generator, err := NewGenerator(injector)
+	require.NoError(t, err)
 	metadata, newChangelog, err := generator.processMetadata(schema, tempDir)
 
 	require.NoError(t, err)
@@ -156,11 +172,12 @@ func TestProcessMetadata_SecondRunNoChanges(t *testing.T) {
 		},
 	}
 
-	app := app.NewApp()
-	generator := NewGenerator(app)
+	injector := setupTestInjector()
+	generator, err := NewGenerator(injector)
+	require.NoError(t, err)
 
 	// First run
-	_, _, err := generator.processMetadata(schema, tempDir)
+	_, _, err = generator.processMetadata(schema, tempDir)
 	require.NoError(t, err)
 
 	// Second run with same schema
@@ -200,11 +217,12 @@ func TestProcessMetadata_SecondRunWithChanges(t *testing.T) {
 		},
 	}
 
-	app := app.NewApp()
-	generator := NewGenerator(app)
+	injector := setupTestInjector()
+	generator, err := NewGenerator(injector)
+	require.NoError(t, err)
 
 	// First run
-	_, _, err := generator.processMetadata(oldSchema, tempDir)
+	_, _, err = generator.processMetadata(oldSchema, tempDir)
 	require.NoError(t, err)
 
 	// Second run with changes

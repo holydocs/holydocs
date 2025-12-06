@@ -9,18 +9,28 @@ import (
 	"github.com/holydocs/holydocs/internal/adapters/secondary/schema"
 	"github.com/holydocs/holydocs/internal/config"
 	"github.com/holydocs/holydocs/internal/core/app"
+	do "github.com/samber/do/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func setupTestInjector() do.Injector {
+	injector := do.New()
+	do.Provide(injector, func(i do.Injector) (*app.App, error) {
+		return app.NewApp(), nil
+	})
+	do.Provide(injector, schema.NewLoader)
+	do.Provide(injector, docsgen.NewGenerator)
+
+	return injector
+}
+
 func TestNewCommand(t *testing.T) {
 	t.Parallel()
 
-	appInstance := app.NewApp()
-	schemaLoader := schema.NewLoader(appInstance)
-	docsGenerator := docsgen.NewGenerator(appInstance)
-
-	cmd := NewCommand(appInstance, schemaLoader, docsGenerator)
+	injector := setupTestInjector()
+	cmd, err := NewCommand(injector)
+	require.NoError(t, err)
 	require.NotNil(t, cmd)
 	assert.NotNil(t, cmd.cmd)
 	assert.Equal(t, "gen-docs", cmd.cmd.Use)
@@ -29,11 +39,9 @@ func TestNewCommand(t *testing.T) {
 func TestCommand_GetCommand(t *testing.T) {
 	t.Parallel()
 
-	appInstance := app.NewApp()
-	schemaLoader := schema.NewLoader(appInstance)
-	docsGenerator := docsgen.NewGenerator(appInstance)
-
-	cmd := NewCommand(appInstance, schemaLoader, docsGenerator)
+	injector := setupTestInjector()
+	cmd, err := NewCommand(injector)
+	require.NoError(t, err)
 	cobraCmd := cmd.GetCommand()
 	require.NotNil(t, cobraCmd)
 	assert.Equal(t, cmd.cmd, cobraCmd)
@@ -42,15 +50,14 @@ func TestCommand_GetCommand(t *testing.T) {
 func TestCommand_prepareOutputDirectory(t *testing.T) {
 	t.Parallel()
 
-	appInstance := app.NewApp()
-	schemaLoader := schema.NewLoader(appInstance)
-	docsGenerator := docsgen.NewGenerator(appInstance)
-	cmd := NewCommand(appInstance, schemaLoader, docsGenerator)
+	injector := setupTestInjector()
+	cmd, err := NewCommand(injector)
+	require.NoError(t, err)
 
 	tempDir := t.TempDir()
 	outputDir := filepath.Join(tempDir, "output")
 
-	err := cmd.prepareOutputDirectory(outputDir)
+	err = cmd.prepareOutputDirectory(outputDir)
 	require.NoError(t, err)
 
 	// Verify directory was created
@@ -62,10 +69,9 @@ func TestCommand_prepareOutputDirectory(t *testing.T) {
 func TestCommand_getSpecFilesPaths_FromConfig(t *testing.T) {
 	t.Parallel()
 
-	appInstance := app.NewApp()
-	schemaLoader := schema.NewLoader(appInstance)
-	docsGenerator := docsgen.NewGenerator(appInstance)
-	cmd := NewCommand(appInstance, schemaLoader, docsGenerator)
+	injector := setupTestInjector()
+	cmd, err := NewCommand(injector)
+	require.NoError(t, err)
 
 	cfg := &config.Config{
 		Input: config.Input{
@@ -83,10 +89,9 @@ func TestCommand_getSpecFilesPaths_FromConfig(t *testing.T) {
 func TestCommand_getSpecFilesPaths_FromDir(t *testing.T) {
 	t.Parallel()
 
-	appInstance := app.NewApp()
-	schemaLoader := schema.NewLoader(appInstance)
-	docsGenerator := docsgen.NewGenerator(appInstance)
-	cmd := NewCommand(appInstance, schemaLoader, docsGenerator)
+	injector := setupTestInjector()
+	cmd, err := NewCommand(injector)
+	require.NoError(t, err)
 
 	tempDir := t.TempDir()
 
@@ -95,7 +100,7 @@ func TestCommand_getSpecFilesPaths_FromDir(t *testing.T) {
 	serviceFile := filepath.Join(tempDir, "test.servicefile.yaml")
 
 	// Write AsyncAPI file
-	err := os.WriteFile(asyncAPIFile, []byte(`asyncapi: "2.0.0"
+	err = os.WriteFile(asyncAPIFile, []byte(`asyncapi: "2.0.0"
 info:
   title: Test API
 `), 0o644)
@@ -123,10 +128,9 @@ info:
 func TestCommand_getSpecFilesPaths_NoFilesProvided(t *testing.T) {
 	t.Parallel()
 
-	appInstance := app.NewApp()
-	schemaLoader := schema.NewLoader(appInstance)
-	docsGenerator := docsgen.NewGenerator(appInstance)
-	cmd := NewCommand(appInstance, schemaLoader, docsGenerator)
+	injector := setupTestInjector()
+	cmd, err := NewCommand(injector)
+	require.NoError(t, err)
 
 	cfg := &config.Config{
 		Input: config.Input{},

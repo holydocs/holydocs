@@ -18,6 +18,7 @@ import (
 	"github.com/holydocs/holydocs/internal/core/app"
 	"github.com/holydocs/holydocs/internal/core/domain"
 	mf "github.com/holydocs/messageflow/pkg/messageflow"
+	do "github.com/samber/do/v2"
 )
 
 // Errors.
@@ -167,11 +168,12 @@ type Generator struct {
 	app *app.App
 }
 
-// NewGenerator creates a new documentation generator.
-func NewGenerator(app *app.App) *Generator {
+func NewGenerator(i do.Injector) (*Generator, error) {
+	appInstance := do.MustInvoke[*app.App](i)
+
 	return &Generator{
-		app: app,
-	}
+		app: appInstance,
+	}, nil
 }
 
 // Generate produces the documentation bundle (markdown + diagrams) for the provided schemas.

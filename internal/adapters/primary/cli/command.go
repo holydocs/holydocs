@@ -17,6 +17,7 @@ import (
 	"github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
 	mfd2 "github.com/holydocs/messageflow/pkg/schema/target/d2"
+	do "github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -41,10 +42,13 @@ type Command struct {
 	docsGenerator *docsgen.Generator
 }
 
-// NewCommand creates a new gen-docs command.
-func NewCommand(app *app.App, schemaLoader *schema.Loader, docsGenerator *docsgen.Generator) *Command {
+func NewCommand(i do.Injector) (*Command, error) {
+	appInstance := do.MustInvoke[*app.App](i)
+	schemaLoader := do.MustInvoke[*schema.Loader](i)
+	docsGenerator := do.MustInvoke[*docsgen.Generator](i)
+
 	c := &Command{
-		app:           app,
+		app:           appInstance,
 		schemaLoader:  schemaLoader,
 		docsGenerator: docsGenerator,
 	}
@@ -72,7 +76,7 @@ Examples:
 		RunE: c.run,
 	}
 
-	return c
+	return c, nil
 }
 
 // GetCommand returns the cobra command.
