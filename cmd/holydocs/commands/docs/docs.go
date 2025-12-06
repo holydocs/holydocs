@@ -30,7 +30,6 @@ const (
 var (
 	ErrNoSpecFilesProvided = errors.New("provide either asyncapi-files|servicefiles or dir")
 	ErrNoSpecFilesFound    = errors.New("no specification files found in directory")
-	ErrInvalidYAMLFile     = errors.New("invalid YAML file")
 )
 
 // Command represents the gen-docs command.
@@ -212,7 +211,7 @@ func specFilesFromDir(dir string) ([]string, []string, error) {
 
 		var yamlDoc map[string]interface{}
 		if err := yaml.Unmarshal(content, &yamlDoc); err != nil {
-			return fmt.Errorf("%w %s: %w", ErrInvalidYAMLFile, path, err)
+			return nil //nolint:nilerr // Don't care about invalid YAML files
 		}
 
 		if _, hasAsyncAPI := yamlDoc["asyncapi"]; hasAsyncAPI {
