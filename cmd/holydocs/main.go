@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -33,16 +32,23 @@ func main() {
 
 func run() error {
 	injector := do.New(
-		config.Package,
 		core.Package,
 		adapters.PrimaryPackage,
 		adapters.SecondaryPackage,
+		config.Package,
 	)
 
 	rootCmd := buildRootCommand(injector)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
-		return loadConfig(cmd)
+		configFile, err := cmd.Flags().GetString("config")
+		if err != nil {
+			return fmt.Errorf("getting config file flag: %w", err)
+		}
+
+		do.ProvideValue(injector, config.ConfigFilePath(configFile))
+
+		return nil
 	}
 
 	if err := rootCmd.Execute(); err != nil {
@@ -65,21 +71,4 @@ func buildRootCommand(injector do.Injector) *cobra.Command {
 	rootCmd.AddCommand(cliCommand.GetCommand())
 
 	return rootCmd
-}
-
-func loadConfig(cmd *cobra.Command) error {
-	configFile, err := cmd.Flags().GetString("config")
-	if err != nil {
-		return fmt.Errorf("getting config file flag: %w", err)
-	}
-
-	cfg, err := config.Load(context.Background(), configFile)
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	ctx := config.WithContext(cmd.Context(), cfg)
-	cmd.SetContext(ctx)
-
-	return nil
 }

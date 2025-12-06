@@ -21,6 +21,8 @@ func setupTestInjector() do.Injector {
 	})
 	do.Provide(injector, schema.NewLoader)
 	do.Provide(injector, docsgen.NewGenerator)
+	do.ProvideValue(injector, config.ConfigFilePath(""))
+	do.Provide(injector, config.LoadConfig)
 
 	return injector
 }

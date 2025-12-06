@@ -40,17 +40,20 @@ type Command struct {
 	app           *app.App
 	schemaLoader  *schema.Loader
 	docsGenerator *docsgen.Generator
+	config        *config.Config
 }
 
 func NewCommand(i do.Injector) (*Command, error) {
 	appInstance := do.MustInvoke[*app.App](i)
 	schemaLoader := do.MustInvoke[*schema.Loader](i)
 	docsGenerator := do.MustInvoke[*docsgen.Generator](i)
+	cfg := do.MustInvoke[*config.Config](i)
 
 	c := &Command{
 		app:           appInstance,
 		schemaLoader:  schemaLoader,
 		docsGenerator: docsGenerator,
+		config:        cfg,
 	}
 
 	c.cmd = &cobra.Command{
@@ -84,23 +87,18 @@ func (c *Command) GetCommand() *cobra.Command {
 	return c.cmd
 }
 
-func (c *Command) run(cmd *cobra.Command, _ []string) error {
-	cfg, ok := config.GetFromContext(cmd.Context())
-	if !ok {
-		return errors.New("configuration not found in context")
-	}
-
-	if err := c.prepareOutputDirectory(cfg.Output.Dir); err != nil {
+func (c *Command) run(_ *cobra.Command, _ []string) error {
+	if err := c.prepareOutputDirectory(c.config.Output.Dir); err != nil {
 		return fmt.Errorf("failed to prepare output directory: %w", err)
 	}
 
 	ctx := context.Background()
 
-	if err := c.generateDocumentation(ctx, cfg); err != nil {
+	if err := c.generateDocumentation(ctx, c.config); err != nil {
 		return fmt.Errorf("failed to generate documentation: %w", err)
 	}
 
-	fmt.Printf("Documentation generated successfully in: %s\n", cfg.Output.Dir)
+	fmt.Printf("Documentation generated successfully in: %s\n", c.config.Output.Dir)
 
 	return nil
 }

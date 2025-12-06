@@ -6,12 +6,12 @@
 package config
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigyaml"
+	do "github.com/samber/do/v2"
 )
 
 // Config represents the complete configuration for HolyDOCs.
@@ -84,10 +84,25 @@ type SystemsDocumentation struct {
 	Description Markdown `env:"DESCRIPTION" yaml:"description" usage:"Markdown content for specific systems to place after system diagrams"`
 }
 
-// Load loads configuration from multiple sources in priority order:
+// ConfigFilePath is a type used to provide config file path to DI container.
+type ConfigFilePath string
+
+//nolint:gochecknoglobals // Package variable is required for dependency injection setup
+var Package = do.Package(
+	do.Lazy[*Config](LoadConfig),
+)
+
+// LoadConfig loads configuration from multiple sources in priority order:
 // 1. Environment variables
 // 2. YAML configuration file.
-func Load(_ context.Context, configFile string) (*Config, error) {
+func LoadConfig(i do.Injector) (*Config, error) {
+	var configFile string
+
+	// Try to get config file path from DI container (if provided)
+	if path, err := do.Invoke[ConfigFilePath](i); err == nil {
+		configFile = string(path)
+	}
+
 	loaderConfig := aconfig.Config{
 		EnvPrefix: "HOLYDOCS",
 		SkipFlags: true,

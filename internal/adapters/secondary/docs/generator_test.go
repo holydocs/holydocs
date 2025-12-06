@@ -52,7 +52,9 @@ func TestGenerateDocs(t *testing.T) {
 
 	// Load test configuration to get documentation settings
 	configPath := filepath.Join("testdata", "holydocs.test.yaml")
-	cfg, err := config.Load(ctx, configPath)
+	configInjector := do.New()
+	do.ProvideValue(configInjector, config.ConfigFilePath(configPath))
+	cfg, err := config.LoadConfig(configInjector)
 	if err != nil {
 		t.Fatalf("load config: %v", err)
 	}

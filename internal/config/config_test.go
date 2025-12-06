@@ -1,17 +1,18 @@
 package config
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
+	do "github.com/samber/do/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLoadConfig_Defaults(t *testing.T) {
-	config, err := Load(context.Background(), "")
+	injector := do.New()
+	config, err := LoadConfig(injector)
 
 	require.NoError(t, err)
 	assert.Equal(t, "HolyDOCs", config.Output.Title)
@@ -54,7 +55,9 @@ diagram:
 	err := os.WriteFile(configFile, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
-	config, err := Load(context.Background(), configFile)
+	injector := do.New()
+	do.ProvideValue(injector, ConfigFilePath(configFile))
+	config, err := LoadConfig(injector)
 
 	require.NoError(t, err)
 	assert.Equal(t, "YAML Test Title", config.Output.Title)
@@ -107,7 +110,9 @@ diagram:
 	}
 
 	// Load configuration - environment variables should take precedence
-	config, err := Load(context.Background(), configFile)
+	injector := do.New()
+	do.ProvideValue(injector, ConfigFilePath(configFile))
+	config, err := LoadConfig(injector)
 
 	require.NoError(t, err)
 
@@ -175,7 +180,9 @@ documentation:
 	err := os.WriteFile(configFile, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
-	config, err := Load(context.Background(), configFile)
+	injector := do.New()
+	do.ProvideValue(injector, ConfigFilePath(configFile))
+	config, err := LoadConfig(injector)
 	require.NoError(t, err)
 
 	return config
