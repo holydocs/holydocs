@@ -16,9 +16,8 @@ import (
 
 // Errors.
 var (
-	ErrServiceFileLoadFailed  = errors.New("failed to load service file")
-	ErrAsyncAPILoadFailed     = errors.New("failed to load AsyncAPI files")
-	ErrSchemaConversionFailed = errors.New("failed to convert schema")
+	ErrServiceFileLoadFailed = errors.New("failed to load service file")
+	ErrAsyncAPILoadFailed    = errors.New("failed to load AsyncAPI files")
 )
 
 type Loader struct {

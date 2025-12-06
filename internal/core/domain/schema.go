@@ -16,8 +16,6 @@ type FormatMode string
 const (
 	FormatModeServiceRelationships = FormatMode("service_relationships")
 	FormatModeOverview             = FormatMode("overview")
-	FormatModeServiceDiagram       = FormatMode("service_diagram")
-	FormatModeServiceFullDiagram   = FormatMode("service_full_diagram")
 )
 
 // FormatOptions defines options for formatting schemas.
@@ -141,21 +139,11 @@ type Changelog struct {
 	Changes []Change  `json:"changes"`
 }
 
-// Source interface defines the contract for schema extraction.
-type Source interface {
-	SchemaExtractor
-}
-
 // Target interface defines the contract for schema formatting and rendering.
 type Target interface {
 	SchemaFormatter
 	SchemaRenderer
 	Capabilities() TargetCapabilities
-}
-
-// SchemaExtractor interface defines the contract for extracting schemas.
-type SchemaExtractor interface {
-	ExtractSchema(ctx context.Context) (Schema, error)
 }
 
 // SchemaFormatter interface defines the contract for formatting schemas.

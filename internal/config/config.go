@@ -77,11 +77,7 @@ type ServiceDocumentation struct {
 
 type SystemDocumentation struct {
 	Summary     Markdown `env:"SUMMARY" yaml:"summary" usage:"Summary of the system"`
-	Description Markdown `env:"DESCRIPTION" yaml:"description" usage:"Markdown content for specific services to place after service relationship diagrams"`
-}
-
-type SystemsDocumentation struct {
-	Description Markdown `env:"DESCRIPTION" yaml:"description" usage:"Markdown content for specific systems to place after system diagrams"`
+	Description Markdown `env:"DESCRIPTION" yaml:"description" usage:"Markdown content for specific system to place after system diagrams"`
 }
 
 // ConfigFilePath is a type used to provide config file path to DI container.

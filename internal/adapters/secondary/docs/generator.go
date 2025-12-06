@@ -25,8 +25,6 @@ import (
 var (
 	ErrHolydocsTargetRequired  = errors.New("holydocs target is required")
 	ErrDirectoryCreationFailed = errors.New("failed to create directory")
-	ErrTemplateExecutionFailed = errors.New("failed to execute template")
-	ErrFileWriteFailed         = errors.New("failed to write file")
 )
 
 //go:embed templates/readme.tmpl
@@ -348,10 +346,8 @@ func buildTemplateData(
 	overviewMarkdown := processMarkdown(cfg.Documentation.Overview.Description)
 
 	serviceSummaries := make(map[string]string)
-	serviceDescriptions := make(map[string]string)
 	for serviceName, serviceDoc := range cfg.Documentation.Services {
 		serviceSummaries[serviceName] = processMarkdown(serviceDoc.Summary)
-		serviceDescriptions[serviceName] = processMarkdown(serviceDoc.Description)
 	}
 
 	systemSummaries := make(map[string]string)
