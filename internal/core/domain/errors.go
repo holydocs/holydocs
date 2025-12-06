@@ -1,4 +1,5 @@
-package holydocs
+// Package domain provides domain entities and interfaces for the holydocs application.
+package domain
 
 import (
 	"fmt"

@@ -13,10 +13,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/holydocs/holydocs/internal/adapters/secondary/schema"
+	d2target "github.com/holydocs/holydocs/internal/adapters/secondary/target/d2"
 	"github.com/holydocs/holydocs/internal/config"
-	"github.com/holydocs/holydocs/internal/holydocs"
-	"github.com/holydocs/holydocs/internal/schema"
-	d2target "github.com/holydocs/holydocs/internal/schema/target/d2"
+	"github.com/holydocs/holydocs/internal/core/app"
+	"github.com/holydocs/holydocs/internal/core/domain"
 	mf "github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
 	mfd2 "github.com/holydocs/messageflow/pkg/schema/target/d2"
@@ -49,7 +50,9 @@ func TestGenerateDocs(t *testing.T) {
 	// Update the config to use the test output directory
 	cfg.Output.Dir = outputDir
 
-	_, err = Generate(ctx, holydocsSchema, holydocsTarget, mfSchema, mfTarget, cfg)
+	app := app.NewApp()
+	generator := NewGenerator(app)
+	_, err = generator.Generate(ctx, holydocsSchema, holydocsTarget, mfSchema, mfTarget, cfg)
 	if err != nil {
 		t.Fatalf("generate docs: %v", err)
 	}
@@ -62,7 +65,7 @@ func TestGenerateDocs(t *testing.T) {
 }
 
 func getTestDataFiles() ([]string, []string) {
-	testdataDir := filepath.Join("..", "..", "internal", "schema", "testdata")
+	testdataDir := "testdata"
 
 	asyncFiles := []string{
 		filepath.Join(testdataDir, "analytics.asyncapi.yaml"),
@@ -86,8 +89,10 @@ func getTestDataFiles() ([]string, []string) {
 }
 
 func setupTestSchemasAndTargets(t *testing.T, ctx context.Context, asyncFiles, serviceFiles []string) (
-	holydocs.Schema, *d2target.Target, mf.Schema, *mfd2.Target) {
-	holydocsSchema, err := schema.Load(ctx, serviceFiles, asyncFiles)
+	domain.Schema, *d2target.Target, mf.Schema, *mfd2.Target) {
+	app := app.NewApp()
+	loader := schema.NewLoader(app)
+	holydocsSchema, err := loader.Load(ctx, serviceFiles, asyncFiles)
 	if err != nil {
 		t.Fatalf("load holydocs schema: %v", err)
 	}
@@ -117,17 +122,19 @@ func setupTestSchemasAndTargets(t *testing.T, ctx context.Context, asyncFiles, s
 func TestProcessMetadata_FirstRun(t *testing.T) {
 	tempDir := t.TempDir()
 
-	schema := holydocs.Schema{
-		Services: []holydocs.Service{
+	schema := domain.Schema{
+		Services: []domain.Service{
 			{
-				Info: holydocs.ServiceInfo{
+				Info: domain.ServiceInfo{
 					Name: "Test Service",
 				},
 			},
 		},
 	}
 
-	metadata, newChangelog, err := processMetadata(schema, tempDir)
+	app := app.NewApp()
+	generator := NewGenerator(app)
+	metadata, newChangelog, err := generator.processMetadata(schema, tempDir)
 
 	require.NoError(t, err)
 	assert.NotNil(t, metadata)
@@ -139,22 +146,25 @@ func TestProcessMetadata_FirstRun(t *testing.T) {
 func TestProcessMetadata_SecondRunNoChanges(t *testing.T) {
 	tempDir := t.TempDir()
 
-	schema := holydocs.Schema{
-		Services: []holydocs.Service{
+	schema := domain.Schema{
+		Services: []domain.Service{
 			{
-				Info: holydocs.ServiceInfo{
+				Info: domain.ServiceInfo{
 					Name: "Test Service",
 				},
 			},
 		},
 	}
 
+	app := app.NewApp()
+	generator := NewGenerator(app)
+
 	// First run
-	_, _, err := processMetadata(schema, tempDir)
+	_, _, err := generator.processMetadata(schema, tempDir)
 	require.NoError(t, err)
 
 	// Second run with same schema
-	metadata, newChangelog, err := processMetadata(schema, tempDir)
+	metadata, newChangelog, err := generator.processMetadata(schema, tempDir)
 
 	require.NoError(t, err)
 	assert.NotNil(t, metadata)
@@ -165,43 +175,46 @@ func TestProcessMetadata_SecondRunNoChanges(t *testing.T) {
 func TestProcessMetadata_SecondRunWithChanges(t *testing.T) {
 	tempDir := t.TempDir()
 
-	oldSchema := holydocs.Schema{
-		Services: []holydocs.Service{
+	oldSchema := domain.Schema{
+		Services: []domain.Service{
 			{
-				Info: holydocs.ServiceInfo{
+				Info: domain.ServiceInfo{
 					Name: "Test Service",
 				},
 			},
 		},
 	}
 
-	newSchema := holydocs.Schema{
-		Services: []holydocs.Service{
+	newSchema := domain.Schema{
+		Services: []domain.Service{
 			{
-				Info: holydocs.ServiceInfo{
+				Info: domain.ServiceInfo{
 					Name: "Test Service",
 				},
 			},
 			{
-				Info: holydocs.ServiceInfo{
+				Info: domain.ServiceInfo{
 					Name: "New Service",
 				},
 			},
 		},
 	}
 
+	app := app.NewApp()
+	generator := NewGenerator(app)
+
 	// First run
-	_, _, err := processMetadata(oldSchema, tempDir)
+	_, _, err := generator.processMetadata(oldSchema, tempDir)
 	require.NoError(t, err)
 
 	// Second run with changes
-	metadata, newChangelog, err := processMetadata(newSchema, tempDir)
+	metadata, newChangelog, err := generator.processMetadata(newSchema, tempDir)
 
 	require.NoError(t, err)
 	assert.NotNil(t, metadata)
 	assert.NotNil(t, newChangelog, "Should have changelog when changes detected")
 	assert.Len(t, newChangelog.Changes, 1, "Should detect one change")
-	assert.Equal(t, holydocs.ChangeTypeAdded, newChangelog.Changes[0].Type, "Should detect added service")
+	assert.Equal(t, domain.ChangeTypeAdded, newChangelog.Changes[0].Type, "Should detect added service")
 	assert.Len(t, metadata.Changelogs, 1, "Should have one changelog entry")
 }
 
@@ -218,21 +231,21 @@ func TestReadMetadata_FileExists(t *testing.T) {
 	tempDir := t.TempDir()
 
 	expectedMetadata := Metadata{
-		Schema: holydocs.Schema{
-			Services: []holydocs.Service{
+		Schema: domain.Schema{
+			Services: []domain.Service{
 				{
-					Info: holydocs.ServiceInfo{
+					Info: domain.ServiceInfo{
 						Name: "Test Service",
 					},
 				},
 			},
 		},
-		Changelogs: []holydocs.Changelog{
+		Changelogs: []domain.Changelog{
 			{
 				Date: time.Now(),
-				Changes: []holydocs.Change{
+				Changes: []domain.Change{
 					{
-						Type:     holydocs.ChangeTypeAdded,
+						Type:     domain.ChangeTypeAdded,
 						Category: "service",
 						Name:     "Test Service",
 						Details:  "Test service was added",
@@ -258,24 +271,24 @@ func TestWriteMetadata(t *testing.T) {
 	tempDir := t.TempDir()
 
 	metadata := Metadata{
-		Schema: holydocs.Schema{
-			Services: []holydocs.Service{
+		Schema: domain.Schema{
+			Services: []domain.Service{
 				{
-					Info: holydocs.ServiceInfo{
+					Info: domain.ServiceInfo{
 						Name: "Test Service",
 					},
 				},
 			},
 		},
-		Changelogs: []holydocs.Changelog{},
+		Changelogs: []domain.Changelog{},
 	}
 
 	err := writeMetadata(tempDir, metadata)
 
 	require.NoError(t, err)
 
-	// Verify file was created
-	metadataPath := filepath.Join(tempDir, "holydocs.json")
+	// Verify file was created (note: metadata file is now domain.json, not holydocs.json)
+	metadataPath := filepath.Join(tempDir, "domain.json")
 	_, err = os.Stat(metadataPath)
 	require.NoError(t, err, "Metadata file should be created")
 }

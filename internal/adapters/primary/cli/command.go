@@ -1,4 +1,4 @@
-package docs
+package cli
 
 import (
 	"context"
@@ -9,10 +9,11 @@ import (
 	"sort"
 	"strings"
 
+	docsgen "github.com/holydocs/holydocs/internal/adapters/secondary/docs"
+	"github.com/holydocs/holydocs/internal/adapters/secondary/schema"
+	d2target "github.com/holydocs/holydocs/internal/adapters/secondary/target/d2"
 	"github.com/holydocs/holydocs/internal/config"
-	"github.com/holydocs/holydocs/internal/docs"
-	"github.com/holydocs/holydocs/internal/schema"
-	"github.com/holydocs/holydocs/internal/schema/target/d2"
+	"github.com/holydocs/holydocs/internal/core/app"
 	"github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
 	mfd2 "github.com/holydocs/messageflow/pkg/schema/target/d2"
@@ -34,12 +35,19 @@ var (
 
 // Command represents the gen-docs command.
 type Command struct {
-	cmd *cobra.Command
+	cmd           *cobra.Command
+	app           *app.App
+	schemaLoader  *schema.Loader
+	docsGenerator *docsgen.Generator
 }
 
 // NewCommand creates a new gen-docs command.
-func NewCommand() *Command {
-	c := &Command{}
+func NewCommand(app *app.App, schemaLoader *schema.Loader, docsGenerator *docsgen.Generator) *Command {
+	c := &Command{
+		app:           app,
+		schemaLoader:  schemaLoader,
+		docsGenerator: docsGenerator,
+	}
 
 	c.cmd = &cobra.Command{
 		Use:   "gen-docs",
@@ -93,7 +101,6 @@ func (c *Command) run(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-// prepareOutputDirectory creates the output directory if it doesn't exist.
 func (c *Command) prepareOutputDirectory(outputDir string) error {
 	if err := os.MkdirAll(outputDir, dirPerm); err != nil {
 		return fmt.Errorf("creating output directory %s: %w", outputDir, err)
@@ -102,20 +109,18 @@ func (c *Command) prepareOutputDirectory(outputDir string) error {
 	return nil
 }
 
-// generateDocumentation generates the documentation using the provided configuration.
 func (c *Command) generateDocumentation(ctx context.Context, cfg *config.Config) error {
-	// Get file paths from config
 	serviceFilesPaths, asyncAPIFilesPaths, err := c.getSpecFilesPaths(cfg)
 	if err != nil {
 		return fmt.Errorf("getting spec files paths: %w", err)
 	}
 
-	s, err := schema.Load(ctx, serviceFilesPaths, asyncAPIFilesPaths)
+	s, err := c.schemaLoader.Load(ctx, serviceFilesPaths, asyncAPIFilesPaths)
 	if err != nil {
 		return fmt.Errorf("loading schema from files: %w", err)
 	}
 
-	d2Target, err := d2.NewTarget(cfg.Diagram.D2)
+	d2Target, err := d2target.NewTarget(cfg.Diagram.D2)
 	if err != nil {
 		return fmt.Errorf("creating D2 target: %w", err)
 	}
@@ -125,7 +130,7 @@ func (c *Command) generateDocumentation(ctx context.Context, cfg *config.Config)
 		return fmt.Errorf("setting up message flow target: %w", err)
 	}
 
-	newChangelog, err := docs.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target, cfg)
+	newChangelog, err := c.docsGenerator.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target, cfg)
 	if err != nil {
 		return fmt.Errorf("generating documentation: %w", err)
 	}
@@ -171,7 +176,6 @@ func (c *Command) setupMessageFlowTarget(ctx context.Context, asyncAPIFilesPaths
 	}, nil
 }
 
-// getSpecFilesPaths extracts file paths from the configuration.
 func (c *Command) getSpecFilesPaths(cfg *config.Config) ([]string, []string, error) {
 	if len(cfg.Input.ServiceFiles) != 0 || len(cfg.Input.AsyncAPIFiles) != 0 {
 		return cfg.Input.ServiceFiles, cfg.Input.AsyncAPIFiles, nil

@@ -1,0 +1,21 @@
+servicefile: "0.1.0"
+info:
+  name: "Notification Service"
+  description: |
+    A service that handles user notifications, preferences, and interactions.
+    Supports real-time notifications, user preferences management.
+  system: Notification System
+  owner: team-notifications
+  repository: https://github.com/holydocs/notification-service
+  tags:
+    - notifications
+    - real-time
+    - preferences
+relationships:
+  - action: "requests"
+    participant: "Firebase Cloud Messaging"
+    description: |
+      A service from Google that enables developers to send notifications and
+      data messages to Android, iOS, and web apps
+    technology: "FCM"
+    external: true

@@ -8,6 +8,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/holydocs/messageflow v0.2.0
 	github.com/holydocs/servicefile v0.0.0-20251006151544-23bdb592faaa
+	github.com/samber/do/v2 v2.0.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -35,6 +36,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/samber/go-type-to-string v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/yuin/goldmark v1.7.12 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect

@@ -1,0 +1,23 @@
+servicefile: "0.1.0"
+info:
+  name: "Mailer Service"
+  description: |
+    A service that handles email delivery through SendGrid. Receives email requests
+    from other services and processes them for delivery. Supports various email types
+    including transactional emails, notifications, and marketing campaigns.
+  repository: https://github.com/holydocs/mailer-service
+  owner: team-notifications
+  system: Notification System
+  tags:
+    - email
+    - notifications
+    - sendgrid
+    - delivery
+relationships:
+  - action: "requests"
+    participant: "SendGrid"
+    description: |
+      A cloud-based email infrastructure platform that helps businesses send and manage
+      large volumes of transactional and marketing emails.
+    technology: "SendGrid"
+    external: true

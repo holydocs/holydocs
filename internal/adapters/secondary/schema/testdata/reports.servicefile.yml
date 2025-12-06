@@ -1,0 +1,14 @@
+servicefile: "0.1.0"
+info:
+  name: "Reports Service"
+  description: |
+    A service that generates and manages analytics reports by requesting data from the analytics service.
+    Provides report scheduling, customization, and delivery capabilities for business intelligence
+    and data-driven decision making.
+  repository: https://github.com/holydocs/reports-service
+  owner: team-data-science
+  system: Analytics System
+  tags:
+    - analytics
+    - reporting
+    - business-intelligence

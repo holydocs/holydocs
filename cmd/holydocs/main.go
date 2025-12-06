@@ -6,19 +6,20 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/holydocs/holydocs/cmd/holydocs/commands/docs"
+	"github.com/holydocs/holydocs/internal/adapters"
+	"github.com/holydocs/holydocs/internal/adapters/primary/cli"
 	"github.com/holydocs/holydocs/internal/config"
+	"github.com/holydocs/holydocs/internal/core"
+	do "github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 )
 
-// Application constants.
 const (
 	appName        = "holydocs"
 	appDescription = "generate system-architecture documentation"
 	appLongDesc    = `HolyDOCs is a tool for generating docs from AsyncAPI, ServiceFile, etc.`
 )
 
-// Errors.
 var (
 	ErrCommandExecution = errors.New("command execution failed")
 )
@@ -30,9 +31,15 @@ func main() {
 	}
 }
 
-// run executes the main application logic.
 func run() error {
-	rootCmd := buildRootCommand()
+	injector := do.New(
+		config.Package,
+		core.Package,
+		adapters.PrimaryPackage,
+		adapters.SecondaryPackage,
+	)
+
+	rootCmd := buildRootCommand(injector)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
 		return loadConfig(cmd)
@@ -45,8 +52,7 @@ func run() error {
 	return nil
 }
 
-// buildRootCommand creates and configures the root cobra command.
-func buildRootCommand() *cobra.Command {
+func buildRootCommand(injector do.Injector) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   appName,
 		Short: appDescription,
@@ -55,12 +61,12 @@ func buildRootCommand() *cobra.Command {
 
 	rootCmd.PersistentFlags().StringP("config", "c", "holydocs.yaml", "Path to YAML configuration file")
 
-	rootCmd.AddCommand(docs.NewCommand().GetCommand())
+	cliCommand := do.MustInvoke[*cli.Command](injector)
+	rootCmd.AddCommand(cliCommand.GetCommand())
 
 	return rootCmd
 }
 
-// loadConfig loads configuration and stores it in the command context.
 func loadConfig(cmd *cobra.Command) error {
 	configFile, err := cmd.Flags().GetString("config")
 	if err != nil {

@@ -13,9 +13,10 @@ import (
 	"text/template"
 	"unicode"
 
+	d2target "github.com/holydocs/holydocs/internal/adapters/secondary/target/d2"
 	"github.com/holydocs/holydocs/internal/config"
-	"github.com/holydocs/holydocs/internal/holydocs"
-	d2target "github.com/holydocs/holydocs/internal/schema/target/d2"
+	"github.com/holydocs/holydocs/internal/core/app"
+	"github.com/holydocs/holydocs/internal/core/domain"
 	mf "github.com/holydocs/messageflow/pkg/messageflow"
 )
 
@@ -35,8 +36,8 @@ type DocumentationConfig = config.Documentation
 
 // Metadata represents the metadata for the documentation.
 type Metadata struct {
-	Schema     holydocs.Schema      `json:"schema"`
-	Changelogs []holydocs.Changelog `json:"changelogs"`
+	Schema     domain.Schema      `json:"schema"`
+	Changelogs []domain.Changelog `json:"changelogs"`
 }
 
 // File permissions.
@@ -63,7 +64,7 @@ type templateData struct {
 	ServiceSummaries map[string]string
 	SystemSummaries  map[string]string
 	MessageFlow      messageFlowView
-	Changelogs       []holydocs.Changelog
+	Changelogs       []domain.Changelog
 }
 
 type systemView struct {
@@ -96,7 +97,7 @@ type serviceView struct {
 
 type relationshipSummary struct {
 	Participant string
-	Action      holydocs.RelationshipAction
+	Action      domain.RelationshipAction
 	Technology  string
 	Description string
 	Proto       string
@@ -143,7 +144,6 @@ type asyncEdge struct {
 	Kind    string
 }
 
-// Convert asyncEdge to d2target.AsyncEdge.
 func (ae asyncEdge) toD2AsyncEdge() d2target.AsyncEdge {
 	return d2target.AsyncEdge{
 		Source:  ae.Source,
@@ -153,7 +153,6 @@ func (ae asyncEdge) toD2AsyncEdge() d2target.AsyncEdge {
 	}
 }
 
-// Convert []asyncEdge to []d2target.AsyncEdge.
 func convertAsyncEdges(edges []asyncEdge) []d2target.AsyncEdge {
 	result := make([]d2target.AsyncEdge, len(edges))
 	for i, edge := range edges {
@@ -163,24 +162,36 @@ func convertAsyncEdges(edges []asyncEdge) []d2target.AsyncEdge {
 	return result
 }
 
+// Generator implements the DocumentationGenerator interface.
+type Generator struct {
+	app *app.App
+}
+
+// NewGenerator creates a new documentation generator.
+func NewGenerator(app *app.App) *Generator {
+	return &Generator{
+		app: app,
+	}
+}
+
 // Generate produces the documentation bundle (markdown + diagrams) for the provided schemas.
-func Generate(
+func (g *Generator) Generate(
 	ctx context.Context,
-	schema holydocs.Schema,
-	holydocsTarget holydocs.Target,
+	schema domain.Schema,
+	holydocsTarget domain.Target,
 	messageflowSchema mf.Schema,
 	messageflowTarget mf.Target,
 	cfg *config.Config,
-) (*holydocs.Changelog, error) {
+) (*domain.Changelog, error) {
 	if holydocsTarget == nil {
 		return nil, ErrHolydocsTargetRequired
 	}
 
 	// Sort schemas before processing to ensure consistent ordering
-	schema.Sort()
+	g.app.SortSchema(&schema)
 	messageflowSchema.Sort()
 
-	metadata, newChangelog, err := processMetadata(schema, cfg.Output.Dir)
+	metadata, newChangelog, err := g.processMetadata(schema, cfg.Output.Dir)
 	if err != nil {
 		return nil, fmt.Errorf("error processing metadata: %w", err)
 	}
@@ -203,19 +214,19 @@ func Generate(
 	return newChangelog, writeReadme(cfg.Output.Dir, data)
 }
 
-func processMetadata(schema holydocs.Schema, outputDir string) (*Metadata, *holydocs.Changelog, error) {
+func (g *Generator) processMetadata(schema domain.Schema, outputDir string) (*Metadata, *domain.Changelog, error) {
 	existingMetadata, err := readMetadata(outputDir)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error reading existing holydocs data: %w", err)
 	}
 
 	var (
-		newChangelog       *holydocs.Changelog
-		existingChangelogs []holydocs.Changelog
+		newChangelog       *domain.Changelog
+		existingChangelogs []domain.Changelog
 	)
 
 	if existingMetadata != nil {
-		changelog := holydocs.CompareSchemas(existingMetadata.Schema, schema)
+		changelog := g.app.CompareSchemas(existingMetadata.Schema, schema)
 		if len(changelog.Changes) > 0 {
 			newChangelog = &changelog
 		}
@@ -289,9 +300,9 @@ func setupOutputDirectories(outputDir string) (*outputDirectories, error) {
 
 func generateAllDiagrams(
 	ctx context.Context,
-	schema holydocs.Schema,
+	schema domain.Schema,
 	asyncEdges []asyncEdge,
-	holydocsTarget holydocs.Target,
+	holydocsTarget domain.Target,
 	messageflowSchema mf.Schema,
 	messageflowTarget mf.Target,
 	cfg *config.Config,
@@ -330,12 +341,10 @@ func generateAllDiagrams(
 func buildTemplateData(
 	cfg *config.Config,
 	diagramResults *diagramResults,
-	changelogs []holydocs.Changelog,
+	changelogs []domain.Changelog,
 ) templateData {
-	// Process overview markdown
 	overviewMarkdown := processMarkdown(cfg.Documentation.Overview.Description)
 
-	// Process service summaries and descriptions
 	serviceSummaries := make(map[string]string)
 	serviceDescriptions := make(map[string]string)
 	for serviceName, serviceDoc := range cfg.Documentation.Services {
@@ -343,7 +352,6 @@ func buildTemplateData(
 		serviceDescriptions[serviceName] = processMarkdown(serviceDoc.Description)
 	}
 
-	// Process system summaries and descriptions
 	systemSummaries := make(map[string]string)
 	systemMarkdowns := make(map[string]string)
 	for systemName, systemDoc := range cfg.Documentation.Systems {
@@ -383,18 +391,16 @@ func processMarkdown(markdown config.Markdown) string {
 
 func generateSystemDiagrams(
 	ctx context.Context,
-	schema holydocs.Schema,
+	schema domain.Schema,
 	asyncEdges []asyncEdge,
-	target holydocs.Target,
+	target domain.Target,
 	diagramsDir string,
 ) (map[string]systemDiagramView, error) {
-	// Convert to D2 target
 	d2Target, ok := target.(*d2target.Target)
 	if !ok {
 		return nil, errors.New("target is not a D2 target")
 	}
 
-	// Find all unique systems
 	systems := make(map[string]struct{})
 	for _, service := range schema.Services {
 		if systemName := strings.TrimSpace(service.Info.System); systemName != "" {
@@ -404,39 +410,33 @@ func generateSystemDiagrams(
 
 	systemDiagrams := make(map[string]systemDiagramView)
 
-	// Generate diagrams for each system
 	for systemName := range systems {
-		// Generate D2 script
 		script, err := d2Target.GenerateSystemDiagramScript(schema, systemName, convertAsyncEdges(asyncEdges))
 		if err != nil {
 			return nil, fmt.Errorf("generate system D2 script for %s: %w", systemName, err)
 		}
 
 		if len(script) == 0 {
-			continue // Skip systems with no content
+			continue
 		}
 
-		// Save raw D2 script
 		d2Filename := fmt.Sprintf("system-%s.d2", sanitizeFilename(systemName))
 		d2Path := filepath.Join(diagramsDir, d2Filename)
 		if err := os.WriteFile(d2Path, script, filePerm); err != nil {
 			return nil, fmt.Errorf("write system D2 script for %s: %w", systemName, err)
 		}
 
-		// Generate SVG diagram
 		diagram, err := d2Target.GenerateSystemDiagram(ctx, schema, systemName, convertAsyncEdges(asyncEdges))
 		if err != nil {
 			return nil, fmt.Errorf("render system diagram for %s: %w", systemName, err)
 		}
 
-		// Save SVG diagram
 		svgFilename := fmt.Sprintf("system-%s.svg", sanitizeFilename(systemName))
 		svgPath := filepath.Join(diagramsDir, svgFilename)
 		if err := os.WriteFile(svgPath, diagram, filePerm); err != nil {
 			return nil, fmt.Errorf("write system diagram for %s: %w", systemName, err)
 		}
 
-		// Add to system diagrams map using display name
 		displayName := systemName
 		if displayName == "" {
 			displayName = "Standalone Services"
@@ -453,9 +453,9 @@ func generateSystemDiagrams(
 
 func buildServiceViews(
 	ctx context.Context,
-	schema holydocs.Schema,
+	schema domain.Schema,
 	asyncEdges []asyncEdge,
-	holydocsTarget holydocs.Target,
+	holydocsTarget domain.Target,
 	messageflowSchema mf.Schema,
 	messageflowTarget mf.Target,
 	outputDir string,
@@ -485,7 +485,7 @@ func buildServiceViews(
 	return views, nil
 }
 
-func buildServiceNameSet(services []holydocs.Service) map[string]struct{} {
+func buildServiceNameSet(services []domain.Service) map[string]struct{} {
 	serviceNameSet := make(map[string]struct{}, len(services))
 	for _, service := range services {
 		serviceNameSet[service.Info.Name] = struct{}{}
@@ -506,10 +506,10 @@ func buildEdgesByServiceMap(asyncEdges []asyncEdge) map[string][]asyncEdge {
 
 func buildServiceView(
 	ctx context.Context,
-	service holydocs.Service,
-	allServices []holydocs.Service,
+	service domain.Service,
+	allServices []domain.Service,
 	edgesByService map[string][]asyncEdge,
-	holydocsTarget holydocs.Target,
+	holydocsTarget domain.Target,
 	messageflowSchema mf.Schema,
 	messageflowTarget mf.Target,
 	serviceNameSet map[string]struct{},
@@ -565,7 +565,7 @@ func buildServiceView(
 }
 
 func buildAsyncSummaries(serviceName string, edgesByService map[string][]asyncEdge,
-	holydocsTarget holydocs.Target, serviceNameSet map[string]struct{}) []asyncSummary {
+	holydocsTarget domain.Target, serviceNameSet map[string]struct{}) []asyncSummary {
 	if len(edgesByService[serviceName]) == 0 {
 		return nil
 	}
@@ -603,7 +603,7 @@ func buildAsyncSummaries(serviceName string, edgesByService map[string][]asyncEd
 
 func buildServiceFlowDiagram(
 	ctx context.Context,
-	service holydocs.Service,
+	service domain.Service,
 	messageflowSchema mf.Schema,
 	messageflowTarget mf.Target,
 	outputDir,
@@ -630,7 +630,7 @@ func buildServiceFlowDiagram(
 	return ""
 }
 
-func buildRelationshipSummaries(rels []holydocs.Relationship) []relationshipSummary {
+func buildRelationshipSummaries(rels []domain.Relationship) []relationshipSummary {
 	if len(rels) == 0 {
 		return nil
 	}
@@ -722,27 +722,22 @@ func buildServiceConnections(serviceName string, edges []asyncEdge) []serviceCon
 }
 
 // modifySchemaWithServiceSummaries creates a modified schema with config-provided service summaries.
-func modifySchemaWithServiceSummaries(schema holydocs.Schema, documentation *DocumentationConfig) holydocs.Schema {
+func modifySchemaWithServiceSummaries(schema domain.Schema, documentation *DocumentationConfig) domain.Schema {
 	if documentation == nil {
 		return schema
 	}
 
-	// Create a copy of the schema
 	modifiedSchema := schema
 
-	// Create a new slice of services with modified descriptions
-	modifiedServices := make([]holydocs.Service, len(schema.Services))
+	modifiedServices := make([]domain.Service, len(schema.Services))
 	for i, service := range schema.Services {
 		modifiedService := service
 
-		// Check if there's a config-provided summary for this service
 		if serviceDoc, exists := documentation.Services[service.Info.Name]; exists {
-			// Create a new service info with the config summary
 			modifiedServiceInfo := service.Info
 			if serviceDoc.Summary.Content != "" {
 				modifiedServiceInfo.Description = serviceDoc.Summary.Content
 			} else if serviceDoc.Summary.FilePath != "" {
-				// Read content from file
 				if content, err := os.ReadFile(serviceDoc.Summary.FilePath); err == nil {
 					modifiedServiceInfo.Description = string(content)
 				}
@@ -761,7 +756,7 @@ func modifySchemaWithServiceSummaries(schema holydocs.Schema, documentation *Doc
 // generateOverviewDiagramWithSystemContent creates a custom overview diagram that includes system content.
 func generateOverviewDiagramWithSystemContent(
 	d2Target *d2target.Target,
-	schema holydocs.Schema,
+	schema domain.Schema,
 	asyncEdges []d2target.AsyncEdge,
 	globalName string,
 	documentation *DocumentationConfig,
@@ -779,20 +774,18 @@ func generateOverviewDiagramWithSystemContent(
 }
 
 // modifySystemNodesInScript modifies system nodes in the D2 script to include service summaries.
-func modifySystemNodesInScript(script string, schema holydocs.Schema, documentation *DocumentationConfig) string {
+func modifySystemNodesInScript(script string, schema domain.Schema, documentation *DocumentationConfig) string {
 	// Group services by system
-	systemServices := make(map[string][]holydocs.Service)
+	systemServices := make(map[string][]domain.Service)
 	for _, service := range schema.Services {
 		if systemName := strings.TrimSpace(service.Info.System); systemName != "" {
 			systemServices[systemName] = append(systemServices[systemName], service)
 		}
 	}
 
-	// For each system, find its node in the script and add content
 	for systemName, services := range systemServices {
 		systemNodeID := "internal.system_" + strings.ToLower(strings.ReplaceAll(systemName, " ", "-"))
 
-		// Find the system node in the script (D2 template uses | to close markdown blocks)
 		pattern := fmt.Sprintf("%s: |md\n# %s\n|", systemNodeID, systemName)
 		replacement := systemNodeID + ": |md\n" + buildSystemDescription(systemName, services, documentation) + "\n|"
 
@@ -803,21 +796,17 @@ func modifySystemNodesInScript(script string, schema holydocs.Schema, documentat
 }
 
 // buildSystemDescription creates a description for a system that includes service summaries.
-func buildSystemDescription(systemName string, _ []holydocs.Service, documentation *DocumentationConfig) string {
+func buildSystemDescription(systemName string, _ []domain.Service, documentation *DocumentationConfig) string {
 	var description strings.Builder
 
-	// Add system name header
 	description.WriteString(fmt.Sprintf("# %s\n\n", systemName))
 
-	// Add system summary if available
 	if systemDoc, exists := documentation.Systems[systemName]; exists {
 		if systemDoc.Summary.Content != "" {
-			// Use only the summary content, format with line breaks
 			summary := strings.TrimSpace(systemDoc.Summary.Content)
 			description.WriteString(d2target.FormatOverviewDescription(summary))
 		} else if systemDoc.Summary.FilePath != "" {
 			if content, err := os.ReadFile(systemDoc.Summary.FilePath); err == nil {
-				// Extract only the first paragraph/summary from the file
 				lines := strings.Split(string(content), "\n")
 				var summaryLines []string
 				for _, line := range lines {
@@ -838,22 +827,19 @@ func buildSystemDescription(systemName string, _ []holydocs.Service, documentati
 
 func generateOverviewDiagram(
 	ctx context.Context,
-	schema holydocs.Schema,
+	schema domain.Schema,
 	asyncEdges []asyncEdge,
-	target holydocs.Target,
+	target domain.Target,
 	globalName, outputPath string,
 	documentation *DocumentationConfig,
 ) error {
-	// Convert to D2 target
 	d2Target, ok := target.(*d2target.Target)
 	if !ok {
 		return errors.New("target is not a D2 target")
 	}
 
-	// Create a modified schema with config-provided service summaries
 	modifiedSchema := modifySchemaWithServiceSummaries(schema, documentation)
 
-	// Generate D2 script with system content
 	script, err := generateOverviewDiagramWithSystemContent(
 		d2Target, modifiedSchema, convertAsyncEdges(asyncEdges), globalName, documentation)
 	if err != nil {
@@ -870,8 +856,7 @@ func generateOverviewDiagram(
 		return fmt.Errorf("write overview D2 script: %w", err)
 	}
 
-	// Generate SVG diagram from the modified D2 script
-	formatted := holydocs.FormattedSchema{
+	formatted := domain.FormattedSchema{
 		Type: "d2",
 		Data: script,
 	}
@@ -889,19 +874,17 @@ func generateOverviewDiagram(
 
 func generateServiceRelationshipsDiagram(
 	ctx context.Context,
-	service holydocs.Service,
-	allServices []holydocs.Service,
+	service domain.Service,
+	allServices []domain.Service,
 	serviceEdges []asyncEdge,
-	target holydocs.Target,
+	target domain.Target,
 	outputPath string,
 ) error {
-	// Convert to D2 target
 	d2Target, ok := target.(*d2target.Target)
 	if !ok {
 		return errors.New("target is not a D2 target")
 	}
 
-	// Generate D2 script
 	script, err := d2Target.GenerateServiceRelationshipsDiagramScript(service, allServices,
 		convertAsyncEdges(serviceEdges))
 	if err != nil {
@@ -912,13 +895,11 @@ func generateServiceRelationshipsDiagram(
 		return nil
 	}
 
-	// Save raw D2 script
 	d2Path := strings.TrimSuffix(outputPath, ".svg") + ".d2"
 	if err := os.WriteFile(d2Path, script, filePerm); err != nil {
 		return fmt.Errorf("write service relationships D2 script: %w", err)
 	}
 
-	// Generate SVG diagram
 	diagram, err := d2Target.GenerateServiceRelationshipsDiagram(ctx, service, allServices,
 		convertAsyncEdges(serviceEdges))
 	if err != nil {
@@ -1408,7 +1389,7 @@ func extractSendMessages(operations []opEntry, appendMessage func(string, mf.Mes
 }
 
 func readMetadata(outputDir string) (*Metadata, error) {
-	metadataPath := filepath.Join(outputDir, "holydocs.json")
+	metadataPath := filepath.Join(outputDir, "domain.json")
 
 	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
 		return nil, nil // No existing metadata
@@ -1432,7 +1413,7 @@ func writeMetadata(outputDir string, data Metadata) error {
 		return fmt.Errorf("error creating output directory: %w", err)
 	}
 
-	metadataPath := filepath.Join(outputDir, "holydocs.json")
+	metadataPath := filepath.Join(outputDir, "domain.json")
 
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {

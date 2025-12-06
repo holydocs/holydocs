@@ -1,0 +1,234 @@
+asyncapi: 3.0.0
+
+info:
+  title: Mailer Service
+  version: 1.0.0
+  description: |
+    A service that handles email delivery through SendGrid. Receives email requests
+    from other services and processes them for delivery.
+
+channels:
+  mailer.send:
+    address: mailer.send
+    messages:
+      EmailSendRequest:
+        $ref: '#/components/messages/EmailSendRequest'
+
+  mailer.batch:
+    address: mailer.batch
+    messages:
+      BatchEmailRequest:
+        $ref: '#/components/messages/BatchEmailRequest'
+
+operations:
+  sendEmail:
+    action: receive
+    channel:
+      $ref: '#/channels/mailer.send'
+    summary: Receive email send requests
+    messages:
+      - $ref: '#/channels/mailer.send/messages/EmailSendRequest'
+
+  sendBatchEmails:
+    action: receive
+    channel:
+      $ref: '#/channels/mailer.batch'
+    summary: Receive batch email send requests
+    messages:
+      - $ref: '#/channels/mailer.batch/messages/BatchEmailRequest'
+
+components:
+  messages:
+    EmailSendRequest:
+      name: EmailSendRequest
+      title: Email Send Request Message
+      summary: Message for requesting email delivery
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          email_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the email request
+          to:
+            type: array
+            items:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Recipient email address
+                name:
+                  type: string
+                  description: Recipient name
+              required:
+                - email
+            description: List of recipients
+          from:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+                description: Sender email address
+              name:
+                type: string
+                description: Sender name
+            required:
+              - email
+            description: Sender information
+          subject:
+            type: string
+            description: Email subject line
+          content:
+            type: object
+            properties:
+              text:
+                type: string
+                description: Plain text content
+              html:
+                type: string
+                description: HTML content
+            description: Email content
+          template_id:
+            type: string
+            description: SendGrid template ID for templated emails
+          template_data:
+            type: object
+            description: Data to populate template variables
+          priority:
+            type: string
+            enum: [low, normal, high]
+            default: normal
+            description: Email priority level
+          scheduled_at:
+            type: string
+            format: date-time
+            description: When to send the email (optional, defaults to immediate)
+          tracking:
+            type: object
+            properties:
+              open_tracking:
+                type: boolean
+                default: true
+              click_tracking:
+                type: boolean
+                default: true
+              subscription_tracking:
+                type: boolean
+                default: false
+            description: Email tracking settings
+        required:
+          - email_id
+          - to
+          - from
+          - subject
+          - content
+
+    BatchEmailRequest:
+      name: BatchEmailRequest
+      title: Batch Email Request Message
+      summary: Message for requesting batch email delivery
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          batch_id:
+            type: string
+            format: uuid
+            description: Unique identifier for the batch request
+          emails:
+            type: array
+            items:
+              $ref: '#/components/schemas/EmailRequest'
+            description: List of emails to send
+          batch_settings:
+            type: object
+            properties:
+              max_concurrent:
+                type: integer
+                minimum: 1
+                maximum: 100
+                default: 10
+                description: Maximum concurrent email sends
+              delay_between_batches:
+                type: integer
+                minimum: 0
+                description: Delay in seconds between batch sends
+            description: Batch processing settings
+        required:
+          - batch_id
+          - emails
+
+  schemas:
+    EmailRequest:
+      type: object
+      properties:
+        email_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the email request
+        to:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+                description: Recipient email address
+              name:
+                type: string
+                description: Recipient name
+            required:
+              - email
+          description: List of recipients
+        from:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+              description: Sender email address
+            name:
+              type: string
+              description: Sender name
+          required:
+            - email
+          description: Sender information
+        subject:
+          type: string
+          description: Email subject line
+        content:
+          type: object
+          properties:
+            text:
+              type: string
+              description: Plain text content
+            html:
+              type: string
+              description: HTML content
+          description: Email content
+        template_id:
+          type: string
+          description: SendGrid template ID for templated emails
+        template_data:
+          type: object
+          description: Data to populate template variables
+        priority:
+          type: string
+          enum: [low, normal, high]
+          default: normal
+          description: Email priority level
+        scheduled_at:
+          type: string
+          format: date-time
+          description: When to send the email (optional, defaults to immediate)
+      required:
+        - email_id
+        - to
+        - from
+        - subject
+        - content

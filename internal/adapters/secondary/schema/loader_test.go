@@ -4,7 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/holydocs/holydocs/internal/holydocs"
+	"github.com/holydocs/holydocs/internal/core/app"
+	"github.com/holydocs/holydocs/internal/core/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -79,7 +80,9 @@ func getLoadTestCases() []loadTestCase {
 
 func runLoadTestCase(t *testing.T, tt loadTestCase) {
 	ctx := context.Background()
-	schema, err := Load(ctx, tt.serviceFilesPaths, tt.asyncapiFilesPaths)
+	app := app.NewApp()
+	loader := NewLoader(app)
+	schema, err := loader.Load(ctx, tt.serviceFilesPaths, tt.asyncapiFilesPaths)
 
 	if tt.expectedError {
 		require.Error(t, err)
@@ -96,7 +99,9 @@ func runLoadTestCase(t *testing.T, tt loadTestCase) {
 
 func TestLoad_ServiceFileContent(t *testing.T) {
 	ctx := context.Background()
-	schema, err := Load(ctx, []string{"testdata/analytics.servicefile.yml"}, []string{})
+	app := app.NewApp()
+	loader := NewLoader(app)
+	schema, err := loader.Load(ctx, []string{"testdata/analytics.servicefile.yml"}, []string{})
 	require.NoError(t, err)
 	require.Len(t, schema.Services, 1)
 
@@ -107,21 +112,23 @@ func TestLoad_ServiceFileContent(t *testing.T) {
 
 	// Check the first relationship (uses clickhouse)
 	rel1 := service.Relationships[0]
-	assert.Equal(t, holydocs.RelationshipActionReplies, rel1.Action)
+	assert.Equal(t, domain.RelationshipActionReplies, rel1.Action)
 	assert.Equal(t, "Data Analyst", rel1.Participant)
 	assert.Equal(t, "http-server", rel1.Technology)
 	assert.True(t, rel1.Person)
 
 	// Check the second relationship (replies Data Analyst)
 	rel2 := service.Relationships[1]
-	assert.Equal(t, holydocs.RelationshipActionUses, rel2.Action)
+	assert.Equal(t, domain.RelationshipActionUses, rel2.Action)
 	assert.Equal(t, "clickhouse", rel2.Participant)
 	assert.Equal(t, "ClickHouse", rel2.Technology)
 }
 
 func TestLoad_AsyncAPIContent(t *testing.T) {
 	ctx := context.Background()
-	schema, err := Load(ctx, []string{}, []string{"testdata/user.asyncapi.yaml"})
+	app := app.NewApp()
+	loader := NewLoader(app)
+	schema, err := loader.Load(ctx, []string{}, []string{"testdata/user.asyncapi.yaml"})
 	require.NoError(t, err)
 	require.Len(t, schema.Services, 1)
 
@@ -136,10 +143,10 @@ func TestLoad_AsyncAPIContent(t *testing.T) {
 	// Verify we have both send and receive operations
 	var hasSend, hasReceive bool
 	for _, op := range service.Operation {
-		if op.Action == holydocs.ActionSend {
+		if op.Action == domain.ActionSend {
 			hasSend = true
 		}
-		if op.Action == holydocs.ActionReceive {
+		if op.Action == domain.ActionReceive {
 			hasReceive = true
 		}
 	}
@@ -149,13 +156,17 @@ func TestLoad_AsyncAPIContent(t *testing.T) {
 
 func TestLoad_MultipleFiles(t *testing.T) {
 	ctx := context.Background()
-	schema, err := Load(ctx, []string{"testdata/analytics.servicefile.yml"}, []string{"testdata/user.asyncapi.yaml"})
+	app := app.NewApp()
+	loader := NewLoader(app)
+	schema, err := loader.Load(ctx,
+		[]string{"testdata/analytics.servicefile.yml"},
+		[]string{"testdata/user.asyncapi.yaml"})
 	require.NoError(t, err)
 	require.Len(t, schema.Services, 2)
 
 	// Find servicefile service
-	var servicefileService *holydocs.Service
-	var asyncapiService *holydocs.Service
+	var servicefileService *domain.Service
+	var asyncapiService *domain.Service
 
 	for i := range schema.Services {
 		switch schema.Services[i].Info.Name {
@@ -180,14 +191,18 @@ func TestLoad_MultipleFiles(t *testing.T) {
 
 func TestLoad_InvalidServiceFile(t *testing.T) {
 	ctx := context.Background()
-	_, err := Load(ctx, []string{"testdata/invalid-servicefile.yml"}, []string{})
+	app := app.NewApp()
+	loader := NewLoader(app)
+	_, err := loader.Load(ctx, []string{"testdata/invalid-servicefile.yml"}, []string{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "loading service files")
 }
 
 func TestLoad_InvalidAsyncAPI(t *testing.T) {
 	ctx := context.Background()
-	_, err := Load(ctx, []string{}, []string{"testdata/nonexistent.asyncapi.yaml"})
+	app := app.NewApp()
+	loader := NewLoader(app)
+	_, err := loader.Load(ctx, []string{}, []string{"testdata/nonexistent.asyncapi.yaml"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "loading AsyncAPI files")
 }

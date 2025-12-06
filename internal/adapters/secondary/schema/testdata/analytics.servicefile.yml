@@ -1,0 +1,25 @@
+servicefile: "0.1.0"
+info:
+  name: "Analytics Service"
+  description: |
+    A centralized analytics service that receives and processes analytics events from all other services.
+    Provides insights, reporting, and analytics data aggregation for user behavior, notification performance,
+    campaign effectiveness, and system-wide metrics.
+  repository: https://github.com/holydocs/analytics-service
+  owner: team-data-science
+  system: Analytics System
+  tags:
+    - analytics
+    - data-science
+relationships:
+  - action: "uses"
+    participant: "clickhouse"
+    description: "Uses ClickHouse database"
+    technology: "ClickHouse"
+  - action: "replies"
+    participant: "Data Analyst"
+    description: |
+      A data analyst who is responsible for analyzing data and providing insights.
+    technology: "http-server"
+    proto: "http"
+    person: true

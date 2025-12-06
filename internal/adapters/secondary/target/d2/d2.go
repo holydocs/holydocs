@@ -11,7 +11,7 @@ import (
 	"text/template"
 
 	"github.com/holydocs/holydocs/internal/config"
-	"github.com/holydocs/holydocs/internal/holydocs"
+	"github.com/holydocs/holydocs/internal/core/domain"
 	"oss.terrastruct.com/d2/d2graph"
 	"oss.terrastruct.com/d2/d2layouts/d2dagrelayout"
 	"oss.terrastruct.com/d2/d2layouts/d2elklayout"
@@ -61,9 +61,9 @@ const (
 //go:embed templates/*.tmpl
 var templatesFS embed.FS
 
-const targetType = holydocs.TargetType("d2")
+const targetType = domain.TargetType("d2")
 
-// Target implements the holydocs.Target interface for D2 diagrams.
+// Target implements the domain.Target interface for D2 diagrams.
 type Target struct {
 	overviewTemplate             *template.Template
 	serviceRelationshipsTemplate *template.Template
@@ -112,8 +112,8 @@ func NewTarget(cfg config.D2Config) (*Target, error) {
 }
 
 // Capabilities returns the capabilities of the D2 target.
-func (t *Target) Capabilities() holydocs.TargetCapabilities {
-	return holydocs.TargetCapabilities{
+func (t *Target) Capabilities() domain.TargetCapabilities {
+	return domain.TargetCapabilities{
 		Format: true,
 		Render: true,
 	}
@@ -123,14 +123,14 @@ func (t *Target) Capabilities() holydocs.TargetCapabilities {
 // This method is required by the SchemaFormatter interface but is not used during documentation generation.
 func (t *Target) FormatSchema(
 	_ context.Context,
-	_ holydocs.Schema,
-	_ holydocs.FormatOptions,
-) (holydocs.FormattedSchema, error) {
-	return holydocs.FormattedSchema{}, ErrFormatSchemaNotSupported
+	_ domain.Schema,
+	_ domain.FormatOptions,
+) (domain.FormattedSchema, error) {
+	return domain.FormattedSchema{}, ErrFormatSchemaNotSupported
 }
 
 // RenderSchema renders a formatted schema to SVG.
-func (t *Target) RenderSchema(ctx context.Context, fs holydocs.FormattedSchema) ([]byte, error) {
+func (t *Target) RenderSchema(ctx context.Context, fs domain.FormattedSchema) ([]byte, error) {
 	if ctx == nil {
 		return nil, ErrContextRequired
 	}
@@ -567,7 +567,7 @@ type SystemDocsPayload struct {
 }
 
 // GenerateOverviewDiagram generates an overview diagram using the docs-specific template.
-func (t *Target) GenerateOverviewDiagram(ctx context.Context, schema holydocs.Schema,
+func (t *Target) GenerateOverviewDiagram(ctx context.Context, schema domain.Schema,
 	asyncEdges []AsyncEdge, globalName string) ([]byte, error) {
 	payload := t.prepareOverviewDocsPayload(schema, asyncEdges, globalName)
 
@@ -576,7 +576,7 @@ func (t *Target) GenerateOverviewDiagram(ctx context.Context, schema holydocs.Sc
 		return nil, fmt.Errorf("execute overview docs template: %w", err)
 	}
 
-	formatted := holydocs.FormattedSchema{
+	formatted := domain.FormattedSchema{
 		Type: targetType,
 		Data: buf.Bytes(),
 	}
@@ -585,8 +585,8 @@ func (t *Target) GenerateOverviewDiagram(ctx context.Context, schema holydocs.Sc
 }
 
 // GenerateServiceRelationshipsDiagram generates a service relationships diagram using the docs-specific template.
-func (t *Target) GenerateServiceRelationshipsDiagram(ctx context.Context, service holydocs.Service,
-	allServices []holydocs.Service, asyncEdges []AsyncEdge) ([]byte, error) {
+func (t *Target) GenerateServiceRelationshipsDiagram(ctx context.Context, service domain.Service,
+	allServices []domain.Service, asyncEdges []AsyncEdge) ([]byte, error) {
 	payload := t.prepareServiceRelationshipsDocsPayload(service, allServices, asyncEdges)
 
 	var buf bytes.Buffer
@@ -594,7 +594,7 @@ func (t *Target) GenerateServiceRelationshipsDiagram(ctx context.Context, servic
 		return nil, fmt.Errorf("execute service relationships docs template: %w", err)
 	}
 
-	formatted := holydocs.FormattedSchema{
+	formatted := domain.FormattedSchema{
 		Type: targetType,
 		Data: buf.Bytes(),
 	}
@@ -603,7 +603,7 @@ func (t *Target) GenerateServiceRelationshipsDiagram(ctx context.Context, servic
 }
 
 // GenerateOverviewDiagramScript generates the D2 script for overview diagram.
-func (t *Target) GenerateOverviewDiagramScript(schema holydocs.Schema, asyncEdges []AsyncEdge,
+func (t *Target) GenerateOverviewDiagramScript(schema domain.Schema, asyncEdges []AsyncEdge,
 	globalName string) ([]byte, error) {
 	payload := t.prepareOverviewDocsPayload(schema, asyncEdges, globalName)
 
@@ -616,7 +616,7 @@ func (t *Target) GenerateOverviewDiagramScript(schema holydocs.Schema, asyncEdge
 }
 
 // GenerateSystemDiagram generates a system diagram using the docs-specific template.
-func (t *Target) GenerateSystemDiagram(ctx context.Context, schema holydocs.Schema,
+func (t *Target) GenerateSystemDiagram(ctx context.Context, schema domain.Schema,
 	systemName string, asyncEdges []AsyncEdge) ([]byte, error) {
 	payload := t.prepareSystemDocsPayload(schema, systemName, asyncEdges)
 
@@ -625,7 +625,7 @@ func (t *Target) GenerateSystemDiagram(ctx context.Context, schema holydocs.Sche
 		return nil, fmt.Errorf("execute system docs template: %w", err)
 	}
 
-	formatted := holydocs.FormattedSchema{
+	formatted := domain.FormattedSchema{
 		Type: targetType,
 		Data: buf.Bytes(),
 	}
@@ -634,7 +634,7 @@ func (t *Target) GenerateSystemDiagram(ctx context.Context, schema holydocs.Sche
 }
 
 // GenerateSystemDiagramScript generates the D2 script for system diagram.
-func (t *Target) GenerateSystemDiagramScript(schema holydocs.Schema, systemName string,
+func (t *Target) GenerateSystemDiagramScript(schema domain.Schema, systemName string,
 	asyncEdges []AsyncEdge) ([]byte, error) {
 	payload := t.prepareSystemDocsPayload(schema, systemName, asyncEdges)
 
@@ -647,8 +647,8 @@ func (t *Target) GenerateSystemDiagramScript(schema holydocs.Schema, systemName 
 }
 
 // GenerateServiceRelationshipsDiagramScript generates the D2 script for service relationships diagram.
-func (t *Target) GenerateServiceRelationshipsDiagramScript(service holydocs.Service,
-	allServices []holydocs.Service, asyncEdges []AsyncEdge) ([]byte, error) {
+func (t *Target) GenerateServiceRelationshipsDiagramScript(service domain.Service,
+	allServices []domain.Service, asyncEdges []AsyncEdge) ([]byte, error) {
 	payload := t.prepareServiceRelationshipsDocsPayload(service, allServices, asyncEdges)
 
 	var buf bytes.Buffer
@@ -659,7 +659,7 @@ func (t *Target) GenerateServiceRelationshipsDiagramScript(service holydocs.Serv
 	return buf.Bytes(), nil
 }
 
-func (t *Target) prepareOverviewDocsPayload(schema holydocs.Schema, asyncEdges []AsyncEdge,
+func (t *Target) prepareOverviewDocsPayload(schema domain.Schema, asyncEdges []AsyncEdge,
 	globalName string) OverviewDocsPayload {
 	payload := OverviewDocsPayload{
 		Nodes: []OverviewDocsNode{},
@@ -682,7 +682,7 @@ func (t *Target) prepareOverviewDocsPayload(schema holydocs.Schema, asyncEdges [
 	return payload
 }
 
-func (t *Target) prepareServiceRelationshipsDocsPayload(service holydocs.Service, allServices []holydocs.Service,
+func (t *Target) prepareServiceRelationshipsDocsPayload(service domain.Service, allServices []domain.Service,
 	asyncEdges []AsyncEdge) ServiceRelationshipsDocsPayload {
 	payload := ServiceRelationshipsDocsPayload{
 		Services:      []ServiceRelationshipsDocsNode{},
@@ -705,7 +705,7 @@ func (t *Target) prepareServiceRelationshipsDocsPayload(service holydocs.Service
 	return payload
 }
 
-func buildServiceMaps(allServices []holydocs.Service) ServiceMaps {
+func buildServiceMaps(allServices []domain.Service) ServiceMaps {
 	serviceNames := make(map[string]struct{}, len(allServices))
 	serviceIDs := make(map[string]string, len(allServices))
 	for _, svc := range allServices {
@@ -719,15 +719,14 @@ func buildServiceMaps(allServices []holydocs.Service) ServiceMaps {
 	}
 }
 
-func buildServiceRelationshipEdges(service holydocs.Service, serviceNames map[string]struct{},
+func buildServiceRelationshipEdges(service domain.Service, serviceNames map[string]struct{},
 	externalNodes map[string]*externalNodeDocs, asyncEdges []AsyncEdge, t *Target) ServiceRelationshipEdges {
-	filteredServices := []holydocs.Service{service}
+	filteredServices := []domain.Service{service}
 	edges := buildRelationshipEdgesDocs(filteredServices, serviceNames, externalNodes)
 
 	serviceOnlyEdges := filterAsyncEdgesForService(service.Info.Name, asyncEdges)
 	diagEdges, _ := t.AggregateAsyncEdgesForService(service.Info.Name, serviceOnlyEdges, serviceNames)
 
-	// Convert DiagramEdge to diagramEdgeDocs
 	for _, de := range diagEdges {
 		edges = append(edges, diagramEdgeDocs(de))
 	}
@@ -764,7 +763,7 @@ func createServiceNodeDefiner(payload *ServiceRelationshipsDocsPayload, definedN
 	}
 }
 
-func defineAllServiceNodes(service holydocs.Service, serviceOnlyEdges []AsyncEdge, edges []diagramEdgeDocs,
+func defineAllServiceNodes(service domain.Service, serviceOnlyEdges []AsyncEdge, edges []diagramEdgeDocs,
 	serviceNames map[string]struct{}, serviceIDs map[string]string, defineServiceNode func(string)) {
 	defineServiceNode(service.Info.Name)
 
@@ -851,14 +850,13 @@ func sortAndConvertEdges(payload *ServiceRelationshipsDocsPayload, edges []diagr
 		return edges[i].Label < edges[j].Label
 	})
 
-	// Convert diagramEdgeDocs to ServiceRelationshipsDocsEdge
 	payload.Edges = make([]ServiceRelationshipsDocsEdge, len(edges))
 	for i, edge := range edges {
 		payload.Edges[i] = ServiceRelationshipsDocsEdge(edge)
 	}
 }
 
-func (t *Target) prepareSystemDocsPayload(schema holydocs.Schema, systemName string,
+func (t *Target) prepareSystemDocsPayload(schema domain.Schema, systemName string,
 	asyncEdges []AsyncEdge) SystemDocsPayload {
 	payload := SystemDocsPayload{
 		SystemName:    systemName,
@@ -877,11 +875,11 @@ func (t *Target) prepareSystemDocsPayload(schema holydocs.Schema, systemName str
 
 	edgeSet := make(map[string]SystemDocsEdge)
 
-	allowedActions := map[holydocs.RelationshipAction]struct{}{
-		holydocs.RelationshipActionRequests: {},
-		holydocs.RelationshipActionReplies:  {},
-		holydocs.RelationshipActionSends:    {},
-		holydocs.RelationshipActionReceives: {},
+	allowedActions := map[domain.RelationshipAction]struct{}{
+		domain.RelationshipActionRequests: {},
+		domain.RelationshipActionReplies:  {},
+		domain.RelationshipActionSends:    {},
+		domain.RelationshipActionReceives: {},
 	}
 
 	processSystemRelationships(schema, systemServices, serviceToNode, nodes, edgeSet)
@@ -917,7 +915,7 @@ type diagramEdgeDocs struct {
 }
 
 func buildRelationshipEdgesDocs(
-	services []holydocs.Service,
+	services []domain.Service,
 	serviceNames map[string]struct{},
 	externalNodes map[string]*externalNodeDocs,
 ) []diagramEdgeDocs {
@@ -936,7 +934,7 @@ func buildRelationshipEdgesDocs(
 }
 
 func processServiceRelationships(
-	service holydocs.Service,
+	service domain.Service,
 	serviceNames map[string]struct{},
 	externalNodes map[string]*externalNodeDocs,
 	edgeSet map[string]diagramEdgeDocs,
@@ -950,7 +948,7 @@ func processServiceRelationships(
 		}
 
 		label := string(rel.Action)
-		if rel.Action == holydocs.RelationshipActionReplies {
+		if rel.Action == domain.RelationshipActionReplies {
 			label = requestsLabel
 		}
 
@@ -966,7 +964,7 @@ func processServiceRelationships(
 
 func processServiceToServiceEdge(
 	serviceID, targetName, label string,
-	rel holydocs.Relationship,
+	rel domain.Relationship,
 	edgeSet map[string]diagramEdgeDocs,
 ) {
 	targetID := serviceNodeID(targetName)
@@ -977,7 +975,7 @@ func processServiceToServiceEdge(
 
 func processServiceToExternalEdge(
 	serviceID, targetName string,
-	rel holydocs.Relationship,
+	rel domain.Relationship,
 	externalNodes map[string]*externalNodeDocs,
 	edgeSet map[string]diagramEdgeDocs,
 	label string,
@@ -1001,7 +999,7 @@ func processServiceToExternalEdge(
 	edgeSet[key] = diagramEdgeDocs{From: from, To: to, Label: label}
 }
 
-func updateExternalNode(node *externalNodeDocs, rel holydocs.Relationship) {
+func updateExternalNode(node *externalNodeDocs, rel domain.Relationship) {
 	if rel.Technology != "" {
 		normalized := strings.ToLower(rel.Technology)
 		node.technologies[normalized] = rel.Technology
@@ -1122,7 +1120,7 @@ func processIncomingEdge(edge AsyncEdge, serviceName string, serviceNames map[st
 	}
 }
 
-func buildOverviewNodes(schema holydocs.Schema) (map[string]OverviewDocsNode,
+func buildOverviewNodes(schema domain.Schema) (map[string]OverviewDocsNode,
 	map[string]OverviewDocsNode, map[string]string) {
 	serviceToNode := make(map[string]OverviewDocsNode)
 	nodes := make(map[string]OverviewDocsNode)
@@ -1175,13 +1173,13 @@ func buildEdgesByServiceMap(asyncEdges []AsyncEdge) map[string][]AsyncEdge {
 	return edgesByService
 }
 
-func processOverviewRelationships(schema holydocs.Schema, serviceToNode map[string]OverviewDocsNode,
+func processOverviewRelationships(schema domain.Schema, serviceToNode map[string]OverviewDocsNode,
 	nodes map[string]OverviewDocsNode, edgeSet map[string]OverviewDocsEdge) {
-	allowedActions := map[holydocs.RelationshipAction]struct{}{
-		holydocs.RelationshipActionRequests: {},
-		holydocs.RelationshipActionReplies:  {},
-		holydocs.RelationshipActionSends:    {},
-		holydocs.RelationshipActionReceives: {},
+	allowedActions := map[domain.RelationshipAction]struct{}{
+		domain.RelationshipActionRequests: {},
+		domain.RelationshipActionReplies:  {},
+		domain.RelationshipActionSends:    {},
+		domain.RelationshipActionReceives: {},
 	}
 
 	for _, service := range schema.Services {
@@ -1201,7 +1199,7 @@ func processOverviewRelationships(schema holydocs.Schema, serviceToNode map[stri
 	}
 }
 
-func getOrCreateTargetNode(rel holydocs.Relationship, serviceToNode map[string]OverviewDocsNode,
+func getOrCreateTargetNode(rel domain.Relationship, serviceToNode map[string]OverviewDocsNode,
 	nodes map[string]OverviewDocsNode) OverviewDocsNode {
 	tgtNode, ok := serviceToNode[rel.Participant]
 	if !ok {
@@ -1223,7 +1221,7 @@ func getOrCreateTargetNode(rel holydocs.Relationship, serviceToNode map[string]O
 	return tgtNode
 }
 
-func processOverviewEdge(srcNode, tgtNode OverviewDocsNode, rel holydocs.Relationship,
+func processOverviewEdge(srcNode, tgtNode OverviewDocsNode, rel domain.Relationship,
 	edgeSet map[string]OverviewDocsEdge) {
 	from, to := orientedEdge(srcNode.ID, tgtNode.ID, rel.Action)
 	if from == to {
@@ -1253,14 +1251,14 @@ func processOverviewEdge(srcNode, tgtNode OverviewDocsNode, rel holydocs.Relatio
 	}
 
 	label := string(rel.Action)
-	if rel.Action == holydocs.RelationshipActionReplies {
+	if rel.Action == domain.RelationshipActionReplies {
 		label = requestsLabel
 	}
 	key := fmt.Sprintf("%s|%s|%s|rel", fromID, toID, label)
 	edgeSet[key] = OverviewDocsEdge{From: fromID, To: toID, Label: label}
 }
 
-func processOverviewAsyncEdges(schema holydocs.Schema, edgesByService map[string][]AsyncEdge,
+func processOverviewAsyncEdges(schema domain.Schema, edgesByService map[string][]AsyncEdge,
 	serviceToNode map[string]OverviewDocsNode, idToServiceName map[string]string,
 	edgeSet map[string]OverviewDocsEdge, t *Target) {
 	serviceNames := make(map[string]struct{}, len(schema.Services))
@@ -1314,8 +1312,8 @@ func processAsyncEdge(de DiagramEdge, serviceToNode map[string]OverviewDocsNode,
 	edgeSet[key] = OverviewDocsEdge{From: fromID, To: toID, Label: de.Label}
 }
 
-func findSystemServices(schema holydocs.Schema, systemName string) []holydocs.Service {
-	systemServices := make([]holydocs.Service, 0)
+func findSystemServices(schema domain.Schema, systemName string) []domain.Service {
+	systemServices := make([]domain.Service, 0)
 	for _, service := range schema.Services {
 		if strings.TrimSpace(service.Info.System) == systemName {
 			systemServices = append(systemServices, service)
@@ -1325,7 +1323,7 @@ func findSystemServices(schema holydocs.Schema, systemName string) []holydocs.Se
 	return systemServices
 }
 
-func buildSystemNodes(systemServices []holydocs.Service) (map[string]SystemDocsNode,
+func buildSystemNodes(systemServices []domain.Service) (map[string]SystemDocsNode,
 	map[string]SystemDocsNode, map[string]string) {
 	serviceToNode := make(map[string]SystemDocsNode)
 	nodes := make(map[string]SystemDocsNode)
@@ -1350,13 +1348,13 @@ func buildSystemNodes(systemServices []holydocs.Service) (map[string]SystemDocsN
 	return serviceToNode, nodes, idToServiceName
 }
 
-func processSystemRelationships(schema holydocs.Schema, systemServices []holydocs.Service,
+func processSystemRelationships(schema domain.Schema, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode, nodes map[string]SystemDocsNode, edgeSet map[string]SystemDocsEdge) {
-	allowedActions := map[holydocs.RelationshipAction]struct{}{
-		holydocs.RelationshipActionRequests: {},
-		holydocs.RelationshipActionReplies:  {},
-		holydocs.RelationshipActionSends:    {},
-		holydocs.RelationshipActionReceives: {},
+	allowedActions := map[domain.RelationshipAction]struct{}{
+		domain.RelationshipActionRequests: {},
+		domain.RelationshipActionReplies:  {},
+		domain.RelationshipActionSends:    {},
+		domain.RelationshipActionReceives: {},
 	}
 
 	for _, service := range systemServices {
@@ -1380,8 +1378,8 @@ func processSystemRelationships(schema holydocs.Schema, systemServices []holydoc
 	}
 }
 
-func findSystemTargetNode(rel holydocs.Relationship, systemServices []holydocs.Service,
-	serviceToNode map[string]SystemDocsNode, schema holydocs.Schema,
+func findSystemTargetNode(rel domain.Relationship, systemServices []domain.Service,
+	serviceToNode map[string]SystemDocsNode, schema domain.Schema,
 	nodes map[string]SystemDocsNode) (SystemDocsNode, bool) {
 	// Check if the target service is also in this system
 	for _, targetService := range systemServices {
@@ -1401,7 +1399,7 @@ func findSystemTargetNode(rel holydocs.Relationship, systemServices []holydocs.S
 	return getOrCreateOtherSystemNode(rel, schema, nodes)
 }
 
-func getOrCreateExternalNode(rel holydocs.Relationship, nodes map[string]SystemDocsNode) (SystemDocsNode, bool) {
+func getOrCreateExternalNode(rel domain.Relationship, nodes map[string]SystemDocsNode) (SystemDocsNode, bool) {
 	nodeID := externalNodeID(rel.Participant)
 	node, exists := nodes[nodeID]
 	if !exists {
@@ -1418,7 +1416,7 @@ func getOrCreateExternalNode(rel holydocs.Relationship, nodes map[string]SystemD
 	return node, true
 }
 
-func getOrCreateOtherSystemNode(rel holydocs.Relationship, schema holydocs.Schema,
+func getOrCreateOtherSystemNode(rel domain.Relationship, schema domain.Schema,
 	nodes map[string]SystemDocsNode) (SystemDocsNode, bool) {
 	for _, otherService := range schema.Services {
 		if otherService.Info.Name == rel.Participant {
@@ -1443,23 +1441,23 @@ func getOrCreateOtherSystemNode(rel holydocs.Relationship, schema holydocs.Schem
 	return SystemDocsNode{}, false
 }
 
-func processSystemEdge(srcNode, tgtNode SystemDocsNode, rel holydocs.Relationship, edgeSet map[string]SystemDocsEdge) {
+func processSystemEdge(srcNode, tgtNode SystemDocsNode, rel domain.Relationship, edgeSet map[string]SystemDocsEdge) {
 	from, to := orientedEdge(srcNode.ID, tgtNode.ID, rel.Action)
 	if from == to {
 		return
 	}
 
 	label := string(rel.Action)
-	if rel.Action == holydocs.RelationshipActionReplies {
+	if rel.Action == domain.RelationshipActionReplies {
 		label = requestsLabel
 	}
 	key := fmt.Sprintf("%s|%s|%s|rel", from, to, label)
 	edgeSet[key] = SystemDocsEdge{From: from, To: to, Label: label}
 }
 
-func processExternalServiceRelationships(schema holydocs.Schema, systemServices []holydocs.Service,
+func processExternalServiceRelationships(schema domain.Schema, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode, nodes map[string]SystemDocsNode,
-	edgeSet map[string]SystemDocsEdge, allowedActions map[holydocs.RelationshipAction]struct{}) {
+	edgeSet map[string]SystemDocsEdge, allowedActions map[domain.RelationshipAction]struct{}) {
 	for _, otherService := range schema.Services {
 		if isServiceInSystem(otherService, systemServices) {
 			continue
@@ -1469,7 +1467,7 @@ func processExternalServiceRelationships(schema holydocs.Schema, systemServices 
 	}
 }
 
-func isServiceInSystem(service holydocs.Service, systemServices []holydocs.Service) bool {
+func isServiceInSystem(service domain.Service, systemServices []domain.Service) bool {
 	for _, systemService := range systemServices {
 		if systemService.Info.Name == service.Info.Name {
 			return true
@@ -1479,9 +1477,9 @@ func isServiceInSystem(service holydocs.Service, systemServices []holydocs.Servi
 	return false
 }
 
-func processOtherServiceRelationships(otherService holydocs.Service, systemServices []holydocs.Service,
+func processOtherServiceRelationships(otherService domain.Service, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode, nodes map[string]SystemDocsNode,
-	edgeSet map[string]SystemDocsEdge, allowedActions map[holydocs.RelationshipAction]struct{}) {
+	edgeSet map[string]SystemDocsEdge, allowedActions map[domain.RelationshipAction]struct{}) {
 	for _, rel := range otherService.Relationships {
 		if _, allowed := allowedActions[rel.Action]; !allowed {
 			continue
@@ -1497,7 +1495,7 @@ func processOtherServiceRelationships(otherService holydocs.Service, systemServi
 	}
 }
 
-func findTargetInSystem(rel holydocs.Relationship, systemServices []holydocs.Service,
+func findTargetInSystem(rel domain.Relationship, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode) (SystemDocsNode, bool) {
 	for _, systemService := range systemServices {
 		if systemService.Info.Name == rel.Participant {
@@ -1510,7 +1508,7 @@ func findTargetInSystem(rel holydocs.Relationship, systemServices []holydocs.Ser
 	return SystemDocsNode{}, false
 }
 
-func getOrCreateSourceNode(otherService holydocs.Service, nodes map[string]SystemDocsNode) SystemDocsNode {
+func getOrCreateSourceNode(otherService domain.Service, nodes map[string]SystemDocsNode) SystemDocsNode {
 	srcNodeID := serviceNodeID(otherService.Info.Name)
 	srcNode, exists := nodes[srcNodeID]
 	if !exists {
@@ -1528,9 +1526,9 @@ func getOrCreateSourceNode(otherService holydocs.Service, nodes map[string]Syste
 	return srcNode
 }
 
-func processPersonRelationships(schema holydocs.Schema, systemServices []holydocs.Service,
+func processPersonRelationships(schema domain.Schema, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode, nodes map[string]SystemDocsNode,
-	edgeSet map[string]SystemDocsEdge, allowedActions map[holydocs.RelationshipAction]struct{}) {
+	edgeSet map[string]SystemDocsEdge, allowedActions map[domain.RelationshipAction]struct{}) {
 	for _, service := range schema.Services {
 		if !isServiceInSystem(service, systemServices) {
 			continue
@@ -1540,9 +1538,9 @@ func processPersonRelationships(schema holydocs.Schema, systemServices []holydoc
 	}
 }
 
-func processServicePersonRelationships(service holydocs.Service, serviceToNode map[string]SystemDocsNode,
+func processServicePersonRelationships(service domain.Service, serviceToNode map[string]SystemDocsNode,
 	nodes map[string]SystemDocsNode, edgeSet map[string]SystemDocsEdge,
-	allowedActions map[holydocs.RelationshipAction]struct{}) {
+	allowedActions map[domain.RelationshipAction]struct{}) {
 	for _, rel := range service.Relationships {
 		if _, allowed := allowedActions[rel.Action]; !allowed {
 			continue
@@ -1562,7 +1560,7 @@ func processServicePersonRelationships(service holydocs.Service, serviceToNode m
 	}
 }
 
-func getOrCreatePersonNode(rel holydocs.Relationship, nodes map[string]SystemDocsNode) SystemDocsNode {
+func getOrCreatePersonNode(rel domain.Relationship, nodes map[string]SystemDocsNode) SystemDocsNode {
 	nodeID := externalNodeID(rel.Participant)
 	node, exists := nodes[nodeID]
 	if !exists {
@@ -1579,7 +1577,7 @@ func getOrCreatePersonNode(rel holydocs.Relationship, nodes map[string]SystemDoc
 	return node
 }
 
-func processSystemAsyncEdges(systemServices []holydocs.Service, asyncEdges []AsyncEdge,
+func processSystemAsyncEdges(systemServices []domain.Service, asyncEdges []AsyncEdge,
 	serviceToNode map[string]SystemDocsNode, idToServiceName map[string]string,
 	edgeSet map[string]SystemDocsEdge, t *Target) map[string][]AsyncEdge {
 	serviceNames := make(map[string]struct{}, len(systemServices))
@@ -1627,7 +1625,7 @@ func processSystemAsyncEdge(de DiagramEdge, idToServiceName map[string]string,
 	edgeSet[key] = SystemDocsEdge{From: fromNode.ID, To: toNode.ID, Label: de.Label}
 }
 
-func processExternalAsyncEdges(schema holydocs.Schema, systemServices []holydocs.Service,
+func processExternalAsyncEdges(schema domain.Schema, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode, nodes map[string]SystemDocsNode,
 	edgeSet map[string]SystemDocsEdge, edgesByService map[string][]AsyncEdge) {
 	for _, otherService := range schema.Services {
@@ -1639,7 +1637,7 @@ func processExternalAsyncEdges(schema holydocs.Schema, systemServices []holydocs
 	}
 }
 
-func processOtherServiceAsyncEdges(otherService holydocs.Service, systemServices []holydocs.Service,
+func processOtherServiceAsyncEdges(otherService domain.Service, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode, nodes map[string]SystemDocsNode,
 	edgeSet map[string]SystemDocsEdge, edgesByService map[string][]AsyncEdge) {
 	for _, edge := range edgesByService[otherService.Info.Name] {
@@ -1658,7 +1656,7 @@ func processOtherServiceAsyncEdges(otherService holydocs.Service, systemServices
 	}
 }
 
-func findTargetInSystemByEdge(edge AsyncEdge, systemServices []holydocs.Service,
+func findTargetInSystemByEdge(edge AsyncEdge, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode) (SystemDocsNode, bool) {
 	for _, systemService := range systemServices {
 		if systemService.Info.Name == edge.Target {
@@ -1671,7 +1669,7 @@ func findTargetInSystemByEdge(edge AsyncEdge, systemServices []holydocs.Service,
 	return SystemDocsNode{}, false
 }
 
-func buildOverviewNodeContent(info holydocs.ServiceInfo) string {
+func buildOverviewNodeContent(info domain.ServiceInfo) string {
 	description := strings.TrimSpace(info.Description)
 	if description == "" {
 		return ""
@@ -1711,7 +1709,6 @@ func buildOverviewPayload(payload *OverviewDocsPayload, nodes map[string]Overvie
 		return edges[i].Label < edges[j].Label
 	})
 
-	// Check if we have any internal services
 	hasInternalServices := false
 	for _, node := range nodeOrder {
 		if node.Internal {
@@ -1725,7 +1722,6 @@ func buildOverviewPayload(payload *OverviewDocsPayload, nodes map[string]Overvie
 	payload.Edges = edges
 	payload.HasInternalServices = hasInternalServices
 
-	// Set default value if globalName is empty
 	if globalName == "" {
 		payload.GlobalName = "Internal Services"
 	} else {
@@ -1734,7 +1730,7 @@ func buildOverviewPayload(payload *OverviewDocsPayload, nodes map[string]Overvie
 }
 
 func buildSystemPayload(payload *SystemDocsPayload, nodes map[string]SystemDocsNode,
-	edgeSet map[string]SystemDocsEdge, systemServices []holydocs.Service) {
+	edgeSet map[string]SystemDocsEdge, systemServices []domain.Service) {
 	// Separate system nodes from external nodes
 	systemNodeOrder := make([]SystemDocsNode, 0)
 	externalNodeOrder := make([]SystemDocsNode, 0)
@@ -1788,9 +1784,9 @@ func buildSystemPayload(payload *SystemDocsPayload, nodes map[string]SystemDocsN
 	payload.Edges = edges
 }
 
-func orientedEdge(sourceID, targetID string, action holydocs.RelationshipAction) (string, string) {
+func orientedEdge(sourceID, targetID string, action domain.RelationshipAction) (string, string) {
 	switch action {
-	case holydocs.RelationshipActionReceives, holydocs.RelationshipActionReplies:
+	case domain.RelationshipActionReceives, domain.RelationshipActionReplies:
 		return targetID, sourceID
 	default:
 		return sourceID, targetID

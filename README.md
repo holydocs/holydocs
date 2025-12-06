@@ -14,10 +14,10 @@ HolyDOCs is a comprehensive documentation generation tool for microservices arch
 
 ## Quickstart
 
-[Here](internal/docs/testdata/expected/README.md) you can see at generated markdown documentation based on [example specifications](internal/schema/testdata). 
+[Here](internal/adapters/secondary/docs/testdata/expected/README.md) you can see at generated markdown documentation based on [example specifications](internal/adapters/secondary/schema/testdata). 
 
 The resulting overview diagram looks like this:
-![Overview Diagram](internal/docs/testdata/expected//diagrams/overview.svg)
+![Overview Diagram](internal/adapters/secondary/docs/testdata/expected/diagrams/overview.svg)
 
 ### Prerequisites
 

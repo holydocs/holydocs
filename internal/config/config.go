@@ -123,14 +123,12 @@ func validateConfig(cfg *Config) error {
 		return errors.New("output directory cannot be empty")
 	}
 
-	// Validate that at least one input source is provided
 	if cfg.Input.Dir == "" &&
 		len(cfg.Input.AsyncAPIFiles) == 0 &&
 		len(cfg.Input.ServiceFiles) == 0 {
 		return errors.New("at least one input source must be provided (dir, asyncapi_files, or service_files)")
 	}
 
-	// Validate documentation configuration
 	if err := validateDocumentation(&cfg.Documentation); err != nil {
 		return fmt.Errorf("invalid documentation configuration: %w", err)
 	}
@@ -138,14 +136,11 @@ func validateConfig(cfg *Config) error {
 	return nil
 }
 
-// validateDocumentation validates the documentation configuration.
 func validateDocumentation(doc *Documentation) error {
-	// Validate overview markdown
 	if err := validateMarkdown(&doc.Overview.Description, "overview description"); err != nil {
 		return err
 	}
 
-	// Validate services markdown
 	for serviceName, serviceDoc := range doc.Services {
 		if err := validateMarkdown(&serviceDoc.Summary, "service "+serviceName+" summary"); err != nil {
 			return err
@@ -155,7 +150,6 @@ func validateDocumentation(doc *Documentation) error {
 		}
 	}
 
-	// Validate systems markdown
 	for systemName, systemDoc := range doc.Systems {
 		if err := validateMarkdown(&systemDoc.Summary, "system "+systemName+" summary"); err != nil {
 			return err
@@ -168,9 +162,7 @@ func validateDocumentation(doc *Documentation) error {
 	return nil
 }
 
-// validateMarkdown validates a single markdown configuration.
 func validateMarkdown(md *Markdown, context string) error {
-	// Check that either content or file path is provided, but not both
 	hasContent := md.Content != ""
 	hasFilePath := md.FilePath != ""
 
