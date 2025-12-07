@@ -232,7 +232,7 @@ func TestTarget_GenerateOverviewDiagramScript(t *testing.T) {
 			},
 		},
 	}
-	asyncEdges := []AsyncEdge{}
+	asyncEdges := []domain.AsyncEdge{}
 
 	script, err := target.GenerateOverviewDiagramScript(schema, asyncEdges, "Test System")
 	require.NoError(t, err)
@@ -264,7 +264,7 @@ func TestTarget_GenerateServiceRelationshipsDiagramScript(t *testing.T) {
 		},
 	}
 	allServices := []domain.Service{service}
-	asyncEdges := []AsyncEdge{}
+	asyncEdges := []domain.AsyncEdge{}
 
 	script, err := target.GenerateServiceRelationshipsDiagramScript(service, allServices, asyncEdges)
 	require.NoError(t, err)
@@ -293,7 +293,7 @@ func TestTarget_GenerateSystemDiagramScript(t *testing.T) {
 			},
 		},
 	}
-	asyncEdges := []AsyncEdge{}
+	asyncEdges := []domain.AsyncEdge{}
 
 	script, err := target.GenerateSystemDiagramScript(schema, "Test System", asyncEdges)
 	require.NoError(t, err)
@@ -322,7 +322,7 @@ func TestTarget_GenerateOverviewDiagram(t *testing.T) {
 			},
 		},
 	}
-	asyncEdges := []AsyncEdge{}
+	asyncEdges := []domain.AsyncEdge{}
 
 	diagram, err := target.GenerateOverviewDiagram(ctx, schema, asyncEdges, "Test System")
 	require.NoError(t, err)
@@ -355,7 +355,7 @@ func TestTarget_GenerateServiceRelationshipsDiagram(t *testing.T) {
 		},
 	}
 	allServices := []domain.Service{service}
-	asyncEdges := []AsyncEdge{}
+	asyncEdges := []domain.AsyncEdge{}
 
 	diagram, err := target.GenerateServiceRelationshipsDiagram(ctx, service, allServices, asyncEdges)
 	require.NoError(t, err)
@@ -385,7 +385,7 @@ func TestTarget_GenerateSystemDiagram(t *testing.T) {
 			},
 		},
 	}
-	asyncEdges := []AsyncEdge{}
+	asyncEdges := []domain.AsyncEdge{}
 
 	diagram, err := target.GenerateSystemDiagram(ctx, schema, "Test System", asyncEdges)
 	require.NoError(t, err)

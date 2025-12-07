@@ -170,13 +170,6 @@ func (t *Target) RenderSchema(ctx context.Context, fs domain.FormattedSchema) ([
 	return svg, nil
 }
 
-type AsyncEdge struct {
-	Source  string
-	Target  string
-	Channel string
-	Kind    string
-}
-
 // ServiceMaps contains service-related maps for efficient lookups.
 type ServiceMaps struct {
 	ServiceNames map[string]struct{}
@@ -186,7 +179,7 @@ type ServiceMaps struct {
 // ServiceRelationshipEdges contains edges and async edges for a service.
 type ServiceRelationshipEdges struct {
 	Edges      []diagramEdgeDocs
-	AsyncEdges []AsyncEdge
+	AsyncEdges []domain.AsyncEdge
 }
 
 func serviceNodeID(name string) string {
@@ -469,7 +462,7 @@ type SystemDocsPayload struct {
 
 // GenerateOverviewDiagram generates an overview diagram using the docs-specific template.
 func (t *Target) GenerateOverviewDiagram(ctx context.Context, schema domain.Schema,
-	asyncEdges []AsyncEdge, globalName string) ([]byte, error) {
+	asyncEdges []domain.AsyncEdge, globalName string) ([]byte, error) {
 	payload := t.prepareOverviewDocsPayload(schema, asyncEdges, globalName)
 
 	var buf bytes.Buffer
@@ -487,7 +480,7 @@ func (t *Target) GenerateOverviewDiagram(ctx context.Context, schema domain.Sche
 
 // GenerateServiceRelationshipsDiagram generates a service relationships diagram using the docs-specific template.
 func (t *Target) GenerateServiceRelationshipsDiagram(ctx context.Context, service domain.Service,
-	allServices []domain.Service, asyncEdges []AsyncEdge) ([]byte, error) {
+	allServices []domain.Service, asyncEdges []domain.AsyncEdge) ([]byte, error) {
 	payload := t.prepareServiceRelationshipsDocsPayload(service, allServices, asyncEdges)
 
 	var buf bytes.Buffer
@@ -504,7 +497,7 @@ func (t *Target) GenerateServiceRelationshipsDiagram(ctx context.Context, servic
 }
 
 // GenerateOverviewDiagramScript generates the D2 script for overview diagram.
-func (t *Target) GenerateOverviewDiagramScript(schema domain.Schema, asyncEdges []AsyncEdge,
+func (t *Target) GenerateOverviewDiagramScript(schema domain.Schema, asyncEdges []domain.AsyncEdge,
 	globalName string) ([]byte, error) {
 	payload := t.prepareOverviewDocsPayload(schema, asyncEdges, globalName)
 
@@ -518,7 +511,7 @@ func (t *Target) GenerateOverviewDiagramScript(schema domain.Schema, asyncEdges 
 
 // GenerateSystemDiagram generates a system diagram using the docs-specific template.
 func (t *Target) GenerateSystemDiagram(ctx context.Context, schema domain.Schema,
-	systemName string, asyncEdges []AsyncEdge) ([]byte, error) {
+	systemName string, asyncEdges []domain.AsyncEdge) ([]byte, error) {
 	payload := t.prepareSystemDocsPayload(schema, systemName, asyncEdges)
 
 	var buf bytes.Buffer
@@ -536,7 +529,7 @@ func (t *Target) GenerateSystemDiagram(ctx context.Context, schema domain.Schema
 
 // GenerateSystemDiagramScript generates the D2 script for system diagram.
 func (t *Target) GenerateSystemDiagramScript(schema domain.Schema, systemName string,
-	asyncEdges []AsyncEdge) ([]byte, error) {
+	asyncEdges []domain.AsyncEdge) ([]byte, error) {
 	payload := t.prepareSystemDocsPayload(schema, systemName, asyncEdges)
 
 	var buf bytes.Buffer
@@ -549,7 +542,7 @@ func (t *Target) GenerateSystemDiagramScript(schema domain.Schema, systemName st
 
 // GenerateServiceRelationshipsDiagramScript generates the D2 script for service relationships diagram.
 func (t *Target) GenerateServiceRelationshipsDiagramScript(service domain.Service,
-	allServices []domain.Service, asyncEdges []AsyncEdge) ([]byte, error) {
+	allServices []domain.Service, asyncEdges []domain.AsyncEdge) ([]byte, error) {
 	payload := t.prepareServiceRelationshipsDocsPayload(service, allServices, asyncEdges)
 
 	var buf bytes.Buffer
@@ -560,7 +553,7 @@ func (t *Target) GenerateServiceRelationshipsDiagramScript(service domain.Servic
 	return buf.Bytes(), nil
 }
 
-func (t *Target) prepareOverviewDocsPayload(schema domain.Schema, asyncEdges []AsyncEdge,
+func (t *Target) prepareOverviewDocsPayload(schema domain.Schema, asyncEdges []domain.AsyncEdge,
 	globalName string) OverviewDocsPayload {
 	payload := OverviewDocsPayload{
 		Nodes: []OverviewDocsNode{},
@@ -584,7 +577,7 @@ func (t *Target) prepareOverviewDocsPayload(schema domain.Schema, asyncEdges []A
 }
 
 func (t *Target) prepareServiceRelationshipsDocsPayload(service domain.Service, allServices []domain.Service,
-	asyncEdges []AsyncEdge) ServiceRelationshipsDocsPayload {
+	asyncEdges []domain.AsyncEdge) ServiceRelationshipsDocsPayload {
 	payload := ServiceRelationshipsDocsPayload{
 		Services:      []ServiceRelationshipsDocsNode{},
 		ExternalNodes: []ServiceRelationshipsDocsExternalNode{},
@@ -621,7 +614,7 @@ func buildServiceMaps(allServices []domain.Service) ServiceMaps {
 }
 
 func buildServiceRelationshipEdges(service domain.Service, serviceNames map[string]struct{},
-	externalNodes map[string]*externalNodeDocs, asyncEdges []AsyncEdge, t *Target) ServiceRelationshipEdges {
+	externalNodes map[string]*externalNodeDocs, asyncEdges []domain.AsyncEdge, t *Target) ServiceRelationshipEdges {
 	filteredServices := []domain.Service{service}
 	edges := buildRelationshipEdgesDocs(filteredServices, serviceNames, externalNodes)
 
@@ -638,8 +631,8 @@ func buildServiceRelationshipEdges(service domain.Service, serviceNames map[stri
 	}
 }
 
-func filterAsyncEdgesForService(serviceName string, asyncEdges []AsyncEdge) []AsyncEdge {
-	serviceOnlyEdges := make([]AsyncEdge, 0, len(asyncEdges))
+func filterAsyncEdgesForService(serviceName string, asyncEdges []domain.AsyncEdge) []domain.AsyncEdge {
+	serviceOnlyEdges := make([]domain.AsyncEdge, 0, len(asyncEdges))
 	for _, edge := range asyncEdges {
 		if edge.Source != serviceName && edge.Target != serviceName {
 			continue
@@ -664,7 +657,7 @@ func createServiceNodeDefiner(payload *ServiceRelationshipsDocsPayload, definedN
 	}
 }
 
-func defineAllServiceNodes(service domain.Service, serviceOnlyEdges []AsyncEdge, edges []diagramEdgeDocs,
+func defineAllServiceNodes(service domain.Service, serviceOnlyEdges []domain.AsyncEdge, edges []diagramEdgeDocs,
 	serviceNames map[string]struct{}, serviceIDs map[string]string, defineServiceNode func(string)) {
 	defineServiceNode(service.Info.Name)
 
@@ -758,7 +751,7 @@ func sortAndConvertEdges(payload *ServiceRelationshipsDocsPayload, edges []diagr
 }
 
 func (t *Target) prepareSystemDocsPayload(schema domain.Schema, systemName string,
-	asyncEdges []AsyncEdge) SystemDocsPayload {
+	asyncEdges []domain.AsyncEdge) SystemDocsPayload {
 	payload := SystemDocsPayload{
 		SystemName:    systemName,
 		SystemID:      sanitizeFilename(systemName),
@@ -917,7 +910,7 @@ func updateExternalNode(node *externalNodeDocs, rel domain.Relationship) {
 }
 
 // AggregateAsyncEdgesForService aggregates async edges for a service and returns diagram edges and summaries.
-func (t *Target) AggregateAsyncEdgesForService(serviceName string, asyncEdges []AsyncEdge,
+func (t *Target) AggregateAsyncEdgesForService(serviceName string, asyncEdges []domain.AsyncEdge,
 	serviceNames map[string]struct{}) ([]DiagramEdge, []AsyncSummary) {
 	summaries := make(map[string]*edgeSummary)
 
@@ -973,7 +966,7 @@ func (t *Target) AggregateAsyncEdgesForService(serviceName string, asyncEdges []
 	return diagramEdges, textSummaries
 }
 
-func processEdgeForService(edge AsyncEdge, serviceName string, serviceNames map[string]struct{},
+func processEdgeForService(edge domain.AsyncEdge, serviceName string, serviceNames map[string]struct{},
 	_ map[string]*edgeSummary, ensureSummary func(other string) *edgeSummary) {
 	switch {
 	case edge.Source == serviceName:
@@ -983,7 +976,7 @@ func processEdgeForService(edge AsyncEdge, serviceName string, serviceNames map[
 	}
 }
 
-func processOutgoingEdge(edge AsyncEdge, serviceName string, serviceNames map[string]struct{},
+func processOutgoingEdge(edge domain.AsyncEdge, serviceName string, serviceNames map[string]struct{},
 	ensureSummary func(other string) *edgeSummary) {
 	other := edge.Target
 	if other == serviceName {
@@ -1002,7 +995,7 @@ func processOutgoingEdge(edge AsyncEdge, serviceName string, serviceNames map[st
 	}
 }
 
-func processIncomingEdge(edge AsyncEdge, serviceName string, serviceNames map[string]struct{},
+func processIncomingEdge(edge domain.AsyncEdge, serviceName string, serviceNames map[string]struct{},
 	ensureSummary func(other string) *edgeSummary) {
 	other := edge.Source
 	if other == serviceName {
@@ -1064,8 +1057,8 @@ func buildOverviewNodes(schema domain.Schema) (map[string]OverviewDocsNode,
 	return serviceToNode, nodes, idToServiceName
 }
 
-func buildEdgesByServiceMap(asyncEdges []AsyncEdge) map[string][]AsyncEdge {
-	edgesByService := make(map[string][]AsyncEdge)
+func buildEdgesByServiceMap(asyncEdges []domain.AsyncEdge) map[string][]domain.AsyncEdge {
+	edgesByService := make(map[string][]domain.AsyncEdge)
 	for _, edge := range asyncEdges {
 		edgesByService[edge.Source] = append(edgesByService[edge.Source], edge)
 		edgesByService[edge.Target] = append(edgesByService[edge.Target], edge)
@@ -1159,7 +1152,7 @@ func processOverviewEdge(srcNode, tgtNode OverviewDocsNode, rel domain.Relations
 	edgeSet[key] = OverviewDocsEdge{From: fromID, To: toID, Label: label}
 }
 
-func processOverviewAsyncEdges(schema domain.Schema, edgesByService map[string][]AsyncEdge,
+func processOverviewAsyncEdges(schema domain.Schema, edgesByService map[string][]domain.AsyncEdge,
 	serviceToNode map[string]OverviewDocsNode, idToServiceName map[string]string,
 	edgeSet map[string]OverviewDocsEdge, t *Target) {
 	serviceNames := make(map[string]struct{}, len(schema.Services))
@@ -1478,9 +1471,9 @@ func getOrCreatePersonNode(rel domain.Relationship, nodes map[string]SystemDocsN
 	return node
 }
 
-func processSystemAsyncEdges(systemServices []domain.Service, asyncEdges []AsyncEdge,
+func processSystemAsyncEdges(systemServices []domain.Service, asyncEdges []domain.AsyncEdge,
 	serviceToNode map[string]SystemDocsNode, idToServiceName map[string]string,
-	edgeSet map[string]SystemDocsEdge, t *Target) map[string][]AsyncEdge {
+	edgeSet map[string]SystemDocsEdge, t *Target) map[string][]domain.AsyncEdge {
 	serviceNames := make(map[string]struct{}, len(systemServices))
 	for _, svc := range systemServices {
 		serviceNames[svc.Info.Name] = struct{}{}
@@ -1528,7 +1521,7 @@ func processSystemAsyncEdge(de DiagramEdge, idToServiceName map[string]string,
 
 func processExternalAsyncEdges(schema domain.Schema, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode, nodes map[string]SystemDocsNode,
-	edgeSet map[string]SystemDocsEdge, edgesByService map[string][]AsyncEdge) {
+	edgeSet map[string]SystemDocsEdge, edgesByService map[string][]domain.AsyncEdge) {
 	for _, otherService := range schema.Services {
 		if isServiceInSystem(otherService, systemServices) {
 			continue
@@ -1540,7 +1533,7 @@ func processExternalAsyncEdges(schema domain.Schema, systemServices []domain.Ser
 
 func processOtherServiceAsyncEdges(otherService domain.Service, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode, nodes map[string]SystemDocsNode,
-	edgeSet map[string]SystemDocsEdge, edgesByService map[string][]AsyncEdge) {
+	edgeSet map[string]SystemDocsEdge, edgesByService map[string][]domain.AsyncEdge) {
 	for _, edge := range edgesByService[otherService.Info.Name] {
 		tgtNode, found := findTargetInSystemByEdge(edge, systemServices, serviceToNode)
 		if !found {
@@ -1557,7 +1550,7 @@ func processOtherServiceAsyncEdges(otherService domain.Service, systemServices [
 	}
 }
 
-func findTargetInSystemByEdge(edge AsyncEdge, systemServices []domain.Service,
+func findTargetInSystemByEdge(edge domain.AsyncEdge, systemServices []domain.Service,
 	serviceToNode map[string]SystemDocsNode) (SystemDocsNode, bool) {
 	for _, systemService := range systemServices {
 		if systemService.Info.Name == edge.Target {

@@ -143,8 +143,8 @@ type asyncEdge struct {
 	Kind    string
 }
 
-func (ae asyncEdge) toD2AsyncEdge() d2target.AsyncEdge {
-	return d2target.AsyncEdge{
+func (ae asyncEdge) toD2AsyncEdge() domain.AsyncEdge {
+	return domain.AsyncEdge{
 		Source:  ae.Source,
 		Target:  ae.Target,
 		Channel: ae.Channel,
@@ -152,8 +152,8 @@ func (ae asyncEdge) toD2AsyncEdge() d2target.AsyncEdge {
 	}
 }
 
-func convertAsyncEdges(edges []asyncEdge) []d2target.AsyncEdge {
-	result := make([]d2target.AsyncEdge, len(edges))
+func convertAsyncEdges(edges []asyncEdge) []domain.AsyncEdge {
+	result := make([]domain.AsyncEdge, len(edges))
 	for i, edge := range edges {
 		result[i] = edge.toD2AsyncEdge()
 	}
@@ -755,7 +755,7 @@ func modifySchemaWithServiceSummaries(schema domain.Schema, documentation *Docum
 func generateOverviewDiagramWithSystemContent(
 	d2Target *d2target.Target,
 	schema domain.Schema,
-	asyncEdges []d2target.AsyncEdge,
+	asyncEdges []domain.AsyncEdge,
 	globalName string,
 	documentation *DocumentationConfig,
 ) ([]byte, error) {

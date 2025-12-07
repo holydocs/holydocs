@@ -24,7 +24,7 @@ type FormatOptions struct {
 	Service     string
 	Technology  string
 	OmitDetails bool
-	AsyncEdges  interface{} // For passing async edges to overview generation
+	AsyncEdges  []AsyncEdge
 }
 
 // Schema defines the structure of a service flow schema containing services and their relationships.
@@ -99,6 +99,14 @@ type Operation struct {
 	Action  OperationAction `json:"action"`
 	Channel Channel         `json:"channel"`
 	Reply   *Channel        `json:"reply,omitempty"`
+}
+
+// AsyncEdge represents an asynchronous communication edge between services.
+type AsyncEdge struct {
+	Source  string `json:"source"`
+	Target  string `json:"target"`
+	Channel string `json:"channel"`
+	Kind    string `json:"kind"`
 }
 
 // FormattedSchema represents a schema that has been formatted for a specific target type.

@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/holydocs/holydocs/internal/config"
 	"github.com/holydocs/holydocs/internal/core/domain"
+	"github.com/holydocs/messageflow/pkg/messageflow"
 )
 
 // SchemaLoader defines the interface for loading schemas from external sources.
@@ -28,9 +30,9 @@ type DocumentationGenerator interface {
 		ctx context.Context,
 		schema domain.Schema,
 		holydocsTarget domain.Target,
-		messageflowSchema interface{},
-		messageflowTarget interface{},
-		cfg interface{},
+		messageflowSchema messageflow.Schema,
+		messageflowTarget messageflow.Target,
+		cfg *config.Config,
 	) (*domain.Changelog, error)
 }
 
