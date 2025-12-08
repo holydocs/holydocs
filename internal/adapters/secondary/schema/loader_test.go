@@ -14,7 +14,7 @@ import (
 func setupTestInjector() do.Injector {
 	injector := do.New()
 	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(), nil
+		return app.NewApp(nil, nil, nil, nil), nil
 	})
 
 	return injector
@@ -92,7 +92,7 @@ func runLoadTestCase(t *testing.T, tt loadTestCase) {
 	ctx := context.Background()
 	injector := do.New()
 	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(), nil
+		return app.NewApp(nil, nil, nil, nil), nil
 	})
 	loader, err := NewLoader(injector)
 	require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestLoad_ServiceFileContent(t *testing.T) {
 	ctx := context.Background()
 	injector := do.New()
 	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(), nil
+		return app.NewApp(nil, nil, nil, nil), nil
 	})
 	loader, err := NewLoader(injector)
 	require.NoError(t, err)

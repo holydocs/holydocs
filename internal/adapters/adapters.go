@@ -4,6 +4,7 @@ import (
 	"github.com/holydocs/holydocs/internal/adapters/primary/cli"
 	docsgen "github.com/holydocs/holydocs/internal/adapters/secondary/docs"
 	"github.com/holydocs/holydocs/internal/adapters/secondary/schema"
+	"github.com/holydocs/holydocs/internal/adapters/secondary/target"
 	do "github.com/samber/do/v2"
 )
 
@@ -16,4 +17,5 @@ var PrimaryPackage = do.Package(
 var SecondaryPackage = do.Package(
 	do.Lazy[*schema.Loader](schema.NewLoader),
 	do.Lazy[*docsgen.Generator](docsgen.NewGenerator),
+	do.Lazy(target.NewTargetProvider),
 )

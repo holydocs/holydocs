@@ -9,14 +9,9 @@ import (
 	"sort"
 	"strings"
 
-	docsgen "github.com/holydocs/holydocs/internal/adapters/secondary/docs"
-	"github.com/holydocs/holydocs/internal/adapters/secondary/schema"
-	d2target "github.com/holydocs/holydocs/internal/adapters/secondary/target/d2"
 	"github.com/holydocs/holydocs/internal/config"
 	"github.com/holydocs/holydocs/internal/core/app"
-	"github.com/holydocs/messageflow/pkg/messageflow"
-	mfschema "github.com/holydocs/messageflow/pkg/schema"
-	mfd2 "github.com/holydocs/messageflow/pkg/schema/target/d2"
+	"github.com/holydocs/holydocs/internal/core/domain"
 	do "github.com/samber/do/v2"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -36,24 +31,18 @@ var (
 
 // Command represents the gen-docs command.
 type Command struct {
-	cmd           *cobra.Command
-	app           *app.App
-	schemaLoader  *schema.Loader
-	docsGenerator *docsgen.Generator
-	config        *config.Config
+	cmd    *cobra.Command
+	app    *app.App
+	config *config.Config
 }
 
 func NewCommand(i do.Injector) (*Command, error) {
 	appInstance := do.MustInvoke[*app.App](i)
-	schemaLoader := do.MustInvoke[*schema.Loader](i)
-	docsGenerator := do.MustInvoke[*docsgen.Generator](i)
 	cfg := do.MustInvoke[*config.Config](i)
 
 	c := &Command{
-		app:           appInstance,
-		schemaLoader:  schemaLoader,
-		docsGenerator: docsGenerator,
-		config:        cfg,
+		app:    appInstance,
+		config: cfg,
 	}
 
 	c.cmd = &cobra.Command{
@@ -117,29 +106,20 @@ func (c *Command) generateDocumentation(ctx context.Context, cfg *config.Config)
 		return fmt.Errorf("getting spec files paths: %w", err)
 	}
 
-	s, err := c.schemaLoader.Load(ctx, serviceFilesPaths, asyncAPIFilesPaths)
-	if err != nil {
-		return fmt.Errorf("loading schema from files: %w", err)
+	req := domain.GenerateDocumentationRequest{
+		ServiceFilesPaths:  serviceFilesPaths,
+		AsyncAPIFilesPaths: asyncAPIFilesPaths,
+		OutputDir:          cfg.Output.Dir,
 	}
 
-	d2Target, err := d2target.NewTarget(cfg.Diagram.D2)
-	if err != nil {
-		return fmt.Errorf("creating D2 target: %w", err)
-	}
-
-	mfSetup, err := c.setupMessageFlowTarget(ctx, asyncAPIFilesPaths)
-	if err != nil {
-		return fmt.Errorf("setting up message flow target: %w", err)
-	}
-
-	newChangelog, err := c.docsGenerator.Generate(ctx, s, d2Target, mfSetup.Schema, mfSetup.Target, cfg)
+	reply, err := c.app.GenerateDocumentation(ctx, req)
 	if err != nil {
 		return fmt.Errorf("generating documentation: %w", err)
 	}
 
-	if newChangelog != nil && len(newChangelog.Changes) > 0 {
+	if reply.Changelog != nil && len(reply.Changelog.Changes) > 0 {
 		fmt.Printf("\nNew Changes Detected:\n")
-		for _, change := range newChangelog.Changes {
+		for _, change := range reply.Changelog.Changes {
 			fmt.Printf("• %s %s: %s\n", change.Type, change.Category, change.Details)
 			if change.Diff != "" {
 				fmt.Println(change.Diff)
@@ -148,34 +128,6 @@ func (c *Command) generateDocumentation(ctx context.Context, cfg *config.Config)
 	}
 
 	return nil
-}
-
-// MessageFlowSetup holds the message flow schema and target.
-type MessageFlowSetup struct {
-	Schema messageflow.Schema
-	Target messageflow.Target
-}
-
-// setupMessageFlowTarget sets up the message flow target if AsyncAPI files are provided.
-func (c *Command) setupMessageFlowTarget(ctx context.Context, asyncAPIFilesPaths []string) (*MessageFlowSetup, error) {
-	if len(asyncAPIFilesPaths) == 0 {
-		return &MessageFlowSetup{}, nil
-	}
-
-	mfSchema, err := mfschema.Load(ctx, asyncAPIFilesPaths)
-	if err != nil {
-		return nil, fmt.Errorf("loading messageflow schema: %w", err)
-	}
-
-	mfTarget, err := mfd2.NewTarget()
-	if err != nil {
-		return nil, fmt.Errorf("creating messageflow D2 target: %w", err)
-	}
-
-	return &MessageFlowSetup{
-		Schema: mfSchema,
-		Target: mfTarget,
-	}, nil
 }
 
 func (c *Command) getSpecFilesPaths(cfg *config.Config) ([]string, []string, error) {

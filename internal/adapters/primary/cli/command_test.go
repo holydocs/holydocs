@@ -17,7 +17,7 @@ import (
 func setupTestInjector() do.Injector {
 	injector := do.New()
 	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(), nil
+		return app.NewApp(nil, nil, nil, nil), nil
 	})
 	do.Provide(injector, schema.NewLoader)
 	do.Provide(injector, docsgen.NewGenerator)

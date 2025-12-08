@@ -19,7 +19,6 @@ linters:
     - gosec
     - gosmopolitan
     - govet
-    - ireturn
     - lll
     - mnd
     - misspell

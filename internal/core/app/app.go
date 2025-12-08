@@ -12,6 +12,8 @@ import (
 	"github.com/holydocs/holydocs/internal/config"
 	"github.com/holydocs/holydocs/internal/core/domain"
 	"github.com/holydocs/messageflow/pkg/messageflow"
+	mfschema "github.com/holydocs/messageflow/pkg/schema"
+	mfd2 "github.com/holydocs/messageflow/pkg/schema/target/d2"
 )
 
 // SchemaLoader defines the interface for loading schemas from external sources.
@@ -37,11 +39,26 @@ type DocumentationGenerator interface {
 }
 
 // App represents the core application with all business logic.
-type App struct{}
+type App struct {
+	schemaLoader  SchemaLoader
+	docsGenerator DocumentationGenerator
+	target        domain.Target
+	config        *config.Config
+}
 
-// NewApp creates a new application instance.
-func NewApp() *App {
-	return &App{}
+// NewApp creates a new application instance with provided dependencies.
+func NewApp(
+	schemaLoader SchemaLoader,
+	docsGenerator DocumentationGenerator,
+	target domain.Target,
+	config *config.Config,
+) *App {
+	return &App{
+		schemaLoader:  schemaLoader,
+		docsGenerator: docsGenerator,
+		target:        target,
+		config:        config,
+	}
 }
 
 // SortSchema sorts the services, their relationships, and operations in a consistent order.
@@ -542,4 +559,53 @@ func (a *App) operationKey(op domain.Operation) string {
 	}
 
 	return key
+}
+
+// GenerateDocumentation generates documentation from the provided specification files.
+func (a *App) GenerateDocumentation(
+	ctx context.Context,
+	req domain.GenerateDocumentationRequest,
+) (domain.GenerateDocumentationReply, error) {
+	schema, err := a.schemaLoader.Load(ctx, req.ServiceFilesPaths, req.AsyncAPIFilesPaths)
+	if err != nil {
+		return domain.GenerateDocumentationReply{}, fmt.Errorf("loading schema from files: %w", err)
+	}
+
+	mfSetup, err := createMessageFlowSetup(ctx, req.AsyncAPIFilesPaths)
+	if err != nil {
+		return domain.GenerateDocumentationReply{}, fmt.Errorf("setting up message flow target: %w", err)
+	}
+
+	changelog, err := a.docsGenerator.Generate(ctx, schema, a.target, mfSetup.Schema, mfSetup.Target, a.config)
+	if err != nil {
+		return domain.GenerateDocumentationReply{}, fmt.Errorf("generating documentation: %w", err)
+	}
+
+	return domain.GenerateDocumentationReply{
+		Changelog: changelog,
+	}, nil
+}
+
+func createMessageFlowSetup(
+	ctx context.Context,
+	asyncAPIFilesPaths []string,
+) (domain.MessageFlowSetup, error) {
+	if len(asyncAPIFilesPaths) == 0 {
+		return domain.MessageFlowSetup{}, nil
+	}
+
+	mfSchema, err := mfschema.Load(ctx, asyncAPIFilesPaths)
+	if err != nil {
+		return domain.MessageFlowSetup{}, fmt.Errorf("loading messageflow schema: %w", err)
+	}
+
+	mfTarget, err := mfd2.NewTarget()
+	if err != nil {
+		return domain.MessageFlowSetup{}, fmt.Errorf("creating messageflow D2 target: %w", err)
+	}
+
+	return domain.MessageFlowSetup{
+		Schema: mfSchema,
+		Target: mfTarget,
+	}, nil
 }

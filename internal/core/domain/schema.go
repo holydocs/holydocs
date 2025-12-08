@@ -4,6 +4,8 @@ package domain
 import (
 	"context"
 	"time"
+
+	"github.com/holydocs/messageflow/pkg/messageflow"
 )
 
 // TargetType represents the type of target format for schema conversion.
@@ -162,4 +164,22 @@ type SchemaFormatter interface {
 // SchemaRenderer interface defines the contract for rendering formatted schemas.
 type SchemaRenderer interface {
 	RenderSchema(ctx context.Context, fs FormattedSchema) ([]byte, error)
+}
+
+// GenerateDocumentationRequest represents a request to generate documentation.
+type GenerateDocumentationRequest struct {
+	ServiceFilesPaths  []string
+	AsyncAPIFilesPaths []string
+	OutputDir          string
+}
+
+// GenerateDocumentationReply represents the reply from generating documentation.
+type GenerateDocumentationReply struct {
+	Changelog *Changelog
+}
+
+// MessageFlowSetup holds the message flow schema and target.
+type MessageFlowSetup struct {
+	Schema messageflow.Schema
+	Target messageflow.Target
 }

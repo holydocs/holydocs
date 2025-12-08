@@ -24,8 +24,8 @@ type Loader struct {
 	app *app.App
 }
 
-func NewLoader(i do.Injector) (*Loader, error) {
-	appInstance := do.MustInvoke[*app.App](i)
+func NewLoader(_ do.Injector) (*Loader, error) {
+	appInstance := app.NewApp(nil, nil, nil, nil)
 
 	return &Loader{
 		app: appInstance,

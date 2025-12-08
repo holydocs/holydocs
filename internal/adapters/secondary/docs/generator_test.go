@@ -29,7 +29,7 @@ import (
 func setupTestInjector() do.Injector {
 	injector := do.New()
 	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(), nil
+		return app.NewApp(nil, nil, nil, nil), nil
 	})
 
 	return injector
@@ -105,7 +105,7 @@ func setupTestSchemasAndTargets(t *testing.T, ctx context.Context, asyncFiles, s
 	domain.Schema, *d2target.Target, mf.Schema, *mfd2.Target) {
 	injector := do.New()
 	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(), nil
+		return app.NewApp(nil, nil, nil, nil), nil
 	})
 	loader, err := schema.NewLoader(injector)
 	require.NoError(t, err)

@@ -10,7 +10,7 @@ import (
 )
 
 func TestCompareSchemas_AddedService(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -49,7 +49,7 @@ func TestCompareSchemas_AddedService(t *testing.T) {
 }
 
 func TestCompareSchemas_RemovedService(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -88,7 +88,7 @@ func TestCompareSchemas_RemovedService(t *testing.T) {
 }
 
 func TestCompareSchemas_AddedRelationship(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -142,7 +142,7 @@ func TestCompareSchemas_AddedRelationship(t *testing.T) {
 }
 
 func TestCompareSchemas_RemovedRelationship(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -196,7 +196,7 @@ func TestCompareSchemas_RemovedRelationship(t *testing.T) {
 }
 
 func TestCompareSchemas_ChangedRelationship(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -247,7 +247,7 @@ func TestCompareSchemas_ChangedRelationship(t *testing.T) {
 }
 
 func TestCompareSchemas_NoChanges(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -271,7 +271,7 @@ func TestCompareSchemas_NoChanges(t *testing.T) {
 }
 
 func TestCompareSchemas_ChangelogDate(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -309,7 +309,7 @@ func TestCompareSchemas_ChangelogDate(t *testing.T) {
 }
 
 func TestRelationshipKey(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	rel := domain.Relationship{
 		Action:      domain.RelationshipActionUses,
 		Participant: "Database",
@@ -323,7 +323,7 @@ func TestRelationshipKey(t *testing.T) {
 }
 
 func TestRelationshipKey_WithProto(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	rel := domain.Relationship{
 		Action:      domain.RelationshipActionReplies,
 		Participant: "User",
@@ -338,7 +338,7 @@ func TestRelationshipKey_WithProto(t *testing.T) {
 }
 
 func TestCompareSchemas_MultipleServicesAdded(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -387,7 +387,7 @@ func TestCompareSchemas_MultipleServicesAdded(t *testing.T) {
 }
 
 func TestCompareSchemas_MultipleServicesRemoved(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -436,7 +436,7 @@ func TestCompareSchemas_MultipleServicesRemoved(t *testing.T) {
 }
 
 func TestCompareSchemas_MultipleRelationshipsAdded(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -500,7 +500,7 @@ func TestCompareSchemas_MultipleRelationshipsAdded(t *testing.T) {
 }
 
 func TestCompareSchemas_MultipleRelationshipsRemoved(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -564,7 +564,7 @@ func TestCompareSchemas_MultipleRelationshipsRemoved(t *testing.T) {
 }
 
 func TestCompareSchemas_MultipleRelationshipsChanged(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createSchemaWithMultipleRelationships()
 	newSchema := createSchemaWithChangedRelationships()
 
@@ -642,7 +642,7 @@ func verifyChangedRelationships(t *testing.T, changes []domain.Change) {
 }
 
 func TestCompareSchemas_ComplexScenario(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createComplexOldSchema()
 	newSchema := createComplexNewSchema()
 
@@ -747,7 +747,7 @@ func verifyComplexScenarioChanges(t *testing.T, changes []domain.Change) {
 }
 
 func TestCompareSchemas_EmptySchemas(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{},
 	}
@@ -762,7 +762,7 @@ func TestCompareSchemas_EmptySchemas(t *testing.T) {
 }
 
 func TestCompareSchemas_EmptyToNonEmpty(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{},
 	}
@@ -789,7 +789,7 @@ func TestCompareSchemas_EmptyToNonEmpty(t *testing.T) {
 }
 
 func TestCompareSchemas_NonEmptyToEmpty(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -816,7 +816,7 @@ func TestCompareSchemas_NonEmptyToEmpty(t *testing.T) {
 }
 
 func TestCompareSchemas_ServiceWithNoRelationships(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -857,7 +857,7 @@ func TestCompareSchemas_ServiceWithNoRelationships(t *testing.T) {
 }
 
 func TestCompareSchemas_ServiceWithRelationshipsToNoRelationships(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -898,7 +898,7 @@ func TestCompareSchemas_ServiceWithRelationshipsToNoRelationships(t *testing.T) 
 }
 
 func TestCompareSchemas_RelationshipWithPersonFlag(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -942,7 +942,7 @@ func TestCompareSchemas_RelationshipWithPersonFlag(t *testing.T) {
 }
 
 func TestCompareSchemas_RelationshipWithEmptyProto(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -985,7 +985,7 @@ func TestCompareSchemas_RelationshipWithEmptyProto(t *testing.T) {
 }
 
 func TestCompareSchemas_RelationshipDescriptionWithSpecialCharacters(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1035,7 +1035,7 @@ func TestCompareSchemas_RelationshipDescriptionWithSpecialCharacters(t *testing.
 }
 
 func TestCompareSchemas_ServiceNameWithSpecialCharacters(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1073,7 +1073,7 @@ func TestCompareSchemas_ServiceNameWithSpecialCharacters(t *testing.T) {
 }
 
 func TestCompareSchemas_RelationshipWithSpecialCharacters(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1116,7 +1116,7 @@ func TestCompareSchemas_RelationshipWithSpecialCharacters(t *testing.T) {
 }
 
 func TestCompareSchemas_AllRelationshipActions(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1169,7 +1169,7 @@ func TestCompareSchemas_AllRelationshipActions(t *testing.T) {
 }
 
 func TestCompareSchemas_ChangelogTimestampConsistency(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1218,7 +1218,7 @@ func TestCompareSchemas_AsyncAPIOperations(t *testing.T) {
 }
 
 func testAddedOperation(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createBasicAnalyticsSchema()
 	newSchema := createAnalyticsSchemaWithReportRequest()
 
@@ -1231,7 +1231,7 @@ func testAddedOperation(t *testing.T) {
 }
 
 func testRemovedOperation(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createAnalyticsSchemaWithReportRequest()
 	newSchema := createBasicAnalyticsSchema()
 
@@ -1244,7 +1244,7 @@ func testRemovedOperation(t *testing.T) {
 }
 
 func testChangedMessagePayload(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createAnalyticsSchemaWithSeverity()
 	newSchema := createAnalyticsSchemaWithConfidence()
 
@@ -1259,7 +1259,7 @@ func testChangedMessagePayload(t *testing.T) {
 }
 
 func testMultipleOperationChanges(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createComplexOldAnalyticsSchema()
 	newSchema := createComplexNewAnalyticsSchema()
 
@@ -1452,7 +1452,7 @@ func createComplexNewAnalyticsSchema() domain.Schema {
 }
 
 func TestOperationKey(t *testing.T) {
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	t.Run("SimpleOperation", func(t *testing.T) {
 		op := domain.Operation{
 			Action: domain.ActionSend,
@@ -1496,7 +1496,7 @@ func TestOperationKey(t *testing.T) {
 func TestApp_MergeSchemas_EmptySchemas(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	result := app.MergeSchemas()
 	assert.Empty(t, result.Services)
 }
@@ -1504,7 +1504,7 @@ func TestApp_MergeSchemas_EmptySchemas(t *testing.T) {
 func TestApp_MergeSchemas_SingleSchema(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1523,7 +1523,7 @@ func TestApp_MergeSchemas_SingleSchema(t *testing.T) {
 func TestApp_MergeSchemas_MultipleSchemasNoOverlap(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema1 := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1553,7 +1553,7 @@ func TestApp_MergeSchemas_MultipleSchemasNoOverlap(t *testing.T) {
 func TestApp_MergeSchemas_OverlappingServices(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema1 := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1604,7 +1604,7 @@ func TestApp_MergeSchemas_OverlappingServices(t *testing.T) {
 func TestApp_MergeSchemas_EmptyServiceName(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1628,7 +1628,7 @@ func TestApp_MergeSchemas_EmptyServiceName(t *testing.T) {
 func TestApp_MergeSchemas_WhitespaceServiceName(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1652,7 +1652,7 @@ func TestApp_MergeSchemas_WhitespaceServiceName(t *testing.T) {
 func TestApp_MergeSchemas_DuplicateRelationships(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema1 := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1697,7 +1697,7 @@ func TestApp_MergeSchemas_DuplicateRelationships(t *testing.T) {
 func TestApp_MergeSchemas_DuplicateOperations(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema1 := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1771,7 +1771,7 @@ func findOperationWithReply(ops []domain.Operation) *domain.Operation {
 func TestApp_MergeSchemas_TagsDeduplication(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema1 := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1805,7 +1805,7 @@ func TestApp_MergeSchemas_TagsDeduplication(t *testing.T) {
 func TestApp_SortSchema_EmptySchema(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{},
 	}
@@ -1817,7 +1817,7 @@ func TestApp_SortSchema_EmptySchema(t *testing.T) {
 func TestApp_SortSchema_ServicesByName(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1847,7 +1847,7 @@ func TestApp_SortSchema_ServicesByName(t *testing.T) {
 func TestApp_SortSchema_Relationships(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1888,7 +1888,7 @@ func TestApp_SortSchema_Relationships(t *testing.T) {
 func TestApp_SortSchema_Operations(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{
 			{
@@ -1944,7 +1944,7 @@ func TestApp_SortSchema_Operations(t *testing.T) {
 func TestApp_SortSchema_ServiceWithNoRelationshipsOrOperations(t *testing.T) {
 	t.Parallel()
 
-	app := NewApp()
+	app := NewApp(nil, nil, nil, nil)
 	schema := domain.Schema{
 		Services: []domain.Service{
 			{
