@@ -4,21 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/holydocs/holydocs/internal/core/app"
 	"github.com/holydocs/holydocs/internal/core/domain"
 	do "github.com/samber/do/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func setupTestInjector() do.Injector {
-	injector := do.New()
-	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(nil, nil, nil, nil), nil
-	})
-
-	return injector
-}
 
 func TestLoad(t *testing.T) {
 	tests := getLoadTestCases()
@@ -91,9 +81,6 @@ func getLoadTestCases() []loadTestCase {
 func runLoadTestCase(t *testing.T, tt loadTestCase) {
 	ctx := context.Background()
 	injector := do.New()
-	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(nil, nil, nil, nil), nil
-	})
 	loader, err := NewLoader(injector)
 	require.NoError(t, err)
 	schema, err := loader.Load(ctx, tt.serviceFilesPaths, tt.asyncapiFilesPaths)
@@ -114,9 +101,6 @@ func runLoadTestCase(t *testing.T, tt loadTestCase) {
 func TestLoad_ServiceFileContent(t *testing.T) {
 	ctx := context.Background()
 	injector := do.New()
-	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(nil, nil, nil, nil), nil
-	})
 	loader, err := NewLoader(injector)
 	require.NoError(t, err)
 	schema, err := loader.Load(ctx, []string{"testdata/analytics.servicefile.yml"}, []string{})
@@ -144,8 +128,7 @@ func TestLoad_ServiceFileContent(t *testing.T) {
 
 func TestLoad_AsyncAPIContent(t *testing.T) {
 	ctx := context.Background()
-	injector := setupTestInjector()
-	loader, err := NewLoader(injector)
+	loader, err := NewLoader(do.New())
 	require.NoError(t, err)
 	schema, err := loader.Load(ctx, []string{}, []string{"testdata/user.asyncapi.yaml"})
 	require.NoError(t, err)
@@ -175,8 +158,7 @@ func TestLoad_AsyncAPIContent(t *testing.T) {
 
 func TestLoad_MultipleFiles(t *testing.T) {
 	ctx := context.Background()
-	injector := setupTestInjector()
-	loader, err := NewLoader(injector)
+	loader, err := NewLoader(do.New())
 	require.NoError(t, err)
 	schema, err := loader.Load(ctx,
 		[]string{"testdata/analytics.servicefile.yml"},
@@ -211,8 +193,7 @@ func TestLoad_MultipleFiles(t *testing.T) {
 
 func TestLoad_InvalidServiceFile(t *testing.T) {
 	ctx := context.Background()
-	injector := setupTestInjector()
-	loader, err := NewLoader(injector)
+	loader, err := NewLoader(do.New())
 	require.NoError(t, err)
 	_, err = loader.Load(ctx, []string{"testdata/invalid-servicefile.yml"}, []string{})
 	require.Error(t, err)
@@ -221,8 +202,7 @@ func TestLoad_InvalidServiceFile(t *testing.T) {
 
 func TestLoad_InvalidAsyncAPI(t *testing.T) {
 	ctx := context.Background()
-	injector := setupTestInjector()
-	loader, err := NewLoader(injector)
+	loader, err := NewLoader(do.New())
 	require.NoError(t, err)
 	_, err = loader.Load(ctx, []string{}, []string{"testdata/nonexistent.asyncapi.yaml"})
 	require.Error(t, err)

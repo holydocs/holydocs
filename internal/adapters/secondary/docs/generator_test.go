@@ -16,7 +16,6 @@ import (
 	"github.com/holydocs/holydocs/internal/adapters/secondary/schema"
 	d2target "github.com/holydocs/holydocs/internal/adapters/secondary/target/d2"
 	"github.com/holydocs/holydocs/internal/config"
-	"github.com/holydocs/holydocs/internal/core/app"
 	"github.com/holydocs/holydocs/internal/core/domain"
 	mf "github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
@@ -25,15 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func setupTestInjector() do.Injector {
-	injector := do.New()
-	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(nil, nil, nil, nil), nil
-	})
-
-	return injector
-}
 
 func TestGenerateDocs(t *testing.T) {
 	t.Parallel()
@@ -62,8 +52,7 @@ func TestGenerateDocs(t *testing.T) {
 	// Update the config to use the test output directory
 	cfg.Output.Dir = outputDir
 
-	injector := setupTestInjector()
-	generator, err := NewGenerator(injector)
+	generator, err := NewGenerator(do.New())
 	require.NoError(t, err)
 	_, err = generator.Generate(ctx, holydocsSchema, holydocsTarget, mfSchema, mfTarget, cfg)
 	if err != nil {
@@ -104,9 +93,6 @@ func getTestDataFiles() ([]string, []string) {
 func setupTestSchemasAndTargets(t *testing.T, ctx context.Context, asyncFiles, serviceFiles []string) (
 	domain.Schema, *d2target.Target, mf.Schema, *mfd2.Target) {
 	injector := do.New()
-	do.Provide(injector, func(i do.Injector) (*app.App, error) {
-		return app.NewApp(nil, nil, nil, nil), nil
-	})
 	loader, err := schema.NewLoader(injector)
 	require.NoError(t, err)
 	holydocsSchema, err := loader.Load(ctx, serviceFiles, asyncFiles)
@@ -149,8 +135,7 @@ func TestProcessMetadata_FirstRun(t *testing.T) {
 		},
 	}
 
-	injector := setupTestInjector()
-	generator, err := NewGenerator(injector)
+	generator, err := NewGenerator(do.New())
 	require.NoError(t, err)
 	metadata, newChangelog, err := generator.processMetadata(schema, tempDir)
 
@@ -174,8 +159,7 @@ func TestProcessMetadata_SecondRunNoChanges(t *testing.T) {
 		},
 	}
 
-	injector := setupTestInjector()
-	generator, err := NewGenerator(injector)
+	generator, err := NewGenerator(do.New())
 	require.NoError(t, err)
 
 	// First run
@@ -219,8 +203,7 @@ func TestProcessMetadata_SecondRunWithChanges(t *testing.T) {
 		},
 	}
 
-	injector := setupTestInjector()
-	generator, err := NewGenerator(injector)
+	generator, err := NewGenerator(do.New())
 	require.NoError(t, err)
 
 	// First run

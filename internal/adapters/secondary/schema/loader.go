@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/holydocs/holydocs/internal/core/app"
 	"github.com/holydocs/holydocs/internal/core/domain"
 	"github.com/holydocs/messageflow/pkg/messageflow"
 	mfschema "github.com/holydocs/messageflow/pkg/schema"
@@ -20,16 +19,10 @@ var (
 	ErrAsyncAPILoadFailed    = errors.New("failed to load AsyncAPI files")
 )
 
-type Loader struct {
-	app *app.App
-}
+type Loader struct{}
 
 func NewLoader(_ do.Injector) (*Loader, error) {
-	appInstance := app.NewApp(nil, nil, nil, nil)
-
-	return &Loader{
-		app: appInstance,
-	}, nil
+	return &Loader{}, nil
 }
 
 // Load loads schemas from ServiceFile and AsyncAPI files and merges them.
@@ -54,7 +47,7 @@ func (l *Loader) Load(ctx context.Context, serviceFilesPaths, asyncapiFilesPaths
 		return domain.Schema{}, nil
 	}
 
-	return l.app.MergeSchemas(schemas...), nil
+	return domain.MergeSchemas(schemas...), nil
 }
 
 func (l *Loader) loadServiceFiles(serviceFilesPaths []string) ([]domain.Schema, error) {

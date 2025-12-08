@@ -1,103 +1,99 @@
-package app
+package domain
 
 import (
 	"testing"
 	"time"
 
-	"github.com/holydocs/holydocs/internal/core/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCompareSchemas_AddedService(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
 			},
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes between schemas")
 	assert.Len(t, changelog.Changes, 1, "Should detect one change")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be an added type")
+	assert.Equal(t, ChangeTypeAdded, change.Type, "Should be an added type")
 	assert.Equal(t, "service", change.Category, "Should be a service category")
 	assert.Equal(t, "Service B", change.Name, "Should have correct service name")
 	assert.Equal(t, "'Service B' was added", change.Details, "Should have correct details")
 }
 
 func TestCompareSchemas_RemovedService(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes between schemas")
 	assert.Len(t, changelog.Changes, 1, "Should detect one change")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeRemoved, change.Type, "Should be a removed type")
+	assert.Equal(t, ChangeTypeRemoved, change.Type, "Should be a removed type")
 	assert.Equal(t, "service", change.Category, "Should be a service category")
 	assert.Equal(t, "Service B", change.Name, "Should have correct service name")
 	assert.Equal(t, "'Service B' was removed", change.Details, "Should have correct details")
 }
 
 func TestCompareSchemas_AddedRelationship(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
@@ -106,20 +102,20 @@ func TestCompareSchemas_AddedRelationship(t *testing.T) {
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 					},
@@ -128,13 +124,13 @@ func TestCompareSchemas_AddedRelationship(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes between schemas")
 	assert.Len(t, changelog.Changes, 1, "Should detect one change")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be an added type")
+	assert.Equal(t, ChangeTypeAdded, change.Type, "Should be an added type")
 	assert.Equal(t, "relationship", change.Category, "Should be a relationship category")
 	assert.Equal(t, "Service A:uses|Cache|Redis|", change.Name, "Should have correct relationship key")
 	assert.Equal(t, "'uses' relationship to 'Cache' using 'Redis' was added to service 'Service A'",
@@ -142,21 +138,20 @@ func TestCompareSchemas_AddedRelationship(t *testing.T) {
 }
 
 func TestCompareSchemas_RemovedRelationship(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 					},
@@ -165,15 +160,15 @@ func TestCompareSchemas_RemovedRelationship(t *testing.T) {
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
@@ -182,13 +177,13 @@ func TestCompareSchemas_RemovedRelationship(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes between schemas")
 	assert.Len(t, changelog.Changes, 1, "Should detect one change")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeRemoved, change.Type, "Should be a removed type")
+	assert.Equal(t, ChangeTypeRemoved, change.Type, "Should be a removed type")
 	assert.Equal(t, "relationship", change.Category, "Should be a relationship category")
 	assert.Equal(t, "Service A:uses|Cache|Redis|", change.Name, "Should have correct relationship key")
 	assert.Equal(t, "'uses' relationship to 'Cache' using 'Redis' was removed from service 'Service A'",
@@ -196,16 +191,15 @@ func TestCompareSchemas_RemovedRelationship(t *testing.T) {
 }
 
 func TestCompareSchemas_ChangedRelationship(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Uses PostgreSQL database",
@@ -215,15 +209,15 @@ func TestCompareSchemas_ChangedRelationship(t *testing.T) {
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Uses PostgreSQL database for data storage",
@@ -233,13 +227,13 @@ func TestCompareSchemas_ChangedRelationship(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes between schemas")
 	assert.Len(t, changelog.Changes, 1, "Should detect one change")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeChanged, change.Type, "Should be a changed type")
+	assert.Equal(t, ChangeTypeChanged, change.Type, "Should be a changed type")
 	assert.Equal(t, "relationship", change.Category, "Should be a relationship category")
 	assert.Equal(t, "Service A:uses|Database|PostgreSQL|", change.Name, "Should have correct relationship key")
 	assert.Equal(t, "Relationship description changed for 'uses' to 'Database' using 'PostgreSQL' in service 'Service A'",
@@ -247,16 +241,15 @@ func TestCompareSchemas_ChangedRelationship(t *testing.T) {
 }
 
 func TestCompareSchemas_NoChanges(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
@@ -265,32 +258,32 @@ func TestCompareSchemas_NoChanges(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(schema, schema)
+	newSchema := oldSchema
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.Empty(t, changelog.Changes, "Should not detect any changes for identical schemas")
 }
 
 func TestCompareSchemas_ChangelogDate(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
 			},
@@ -298,7 +291,7 @@ func TestCompareSchemas_ChangelogDate(t *testing.T) {
 	}
 
 	before := time.Now()
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 	after := time.Now()
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
@@ -309,67 +302,64 @@ func TestCompareSchemas_ChangelogDate(t *testing.T) {
 }
 
 func TestRelationshipKey(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	rel := domain.Relationship{
-		Action:      domain.RelationshipActionUses,
+	rel := Relationship{
+		Action:      RelationshipActionUses,
 		Participant: "Database",
 		Technology:  "PostgreSQL",
 	}
 
-	key := app.relationshipKey(rel)
+	key := RelationshipKey(rel)
 	expected := "uses|Database|PostgreSQL|"
 
 	assert.Equal(t, expected, key, "Should generate correct relationship key")
 }
 
 func TestRelationshipKey_WithProto(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	rel := domain.Relationship{
-		Action:      domain.RelationshipActionReplies,
+	rel := Relationship{
+		Action:      RelationshipActionReplies,
 		Participant: "User",
 		Technology:  "HTTP",
 		Proto:       "http",
 	}
 
-	key := app.relationshipKey(rel)
+	key := RelationshipKey(rel)
 	expected := "replies|User|HTTP|http"
 
 	assert.Equal(t, expected, key, "Should generate correct relationship key with proto")
 }
 
 func TestCompareSchemas_MultipleServicesAdded(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service C",
 				},
 			},
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 2, "Should detect two added services")
@@ -377,48 +367,47 @@ func TestCompareSchemas_MultipleServicesAdded(t *testing.T) {
 	// Check that both services are detected as added
 	serviceNames := make(map[string]bool)
 	for _, change := range changelog.Changes {
-		assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+		assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 		assert.Equal(t, "service", change.Category, "Should be service category")
 		serviceNames[change.Name] = true
 	}
 
-	assert.True(t, serviceNames["Service B"], "Should detect domain.Service B as added")
-	assert.True(t, serviceNames["Service C"], "Should detect domain.Service C as added")
+	assert.True(t, serviceNames["Service B"], "Should detect Service B as added")
+	assert.True(t, serviceNames["Service C"], "Should detect Service C as added")
 }
 
 func TestCompareSchemas_MultipleServicesRemoved(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service C",
 				},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 2, "Should detect two removed services")
@@ -426,26 +415,25 @@ func TestCompareSchemas_MultipleServicesRemoved(t *testing.T) {
 	// Check that both services are detected as removed
 	serviceNames := make(map[string]bool)
 	for _, change := range changelog.Changes {
-		assert.Equal(t, domain.ChangeTypeRemoved, change.Type, "Should be removed type")
+		assert.Equal(t, ChangeTypeRemoved, change.Type, "Should be removed type")
 		assert.Equal(t, "service", change.Category, "Should be service category")
 		serviceNames[change.Name] = true
 	}
 
-	assert.True(t, serviceNames["Service B"], "Should detect domain.Service B as removed")
-	assert.True(t, serviceNames["Service C"], "Should detect domain.Service C as removed")
+	assert.True(t, serviceNames["Service B"], "Should detect Service B as removed")
+	assert.True(t, serviceNames["Service C"], "Should detect Service C as removed")
 }
 
 func TestCompareSchemas_MultipleRelationshipsAdded(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
@@ -454,25 +442,25 @@ func TestCompareSchemas_MultipleRelationshipsAdded(t *testing.T) {
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 					},
 					{
-						Action:      domain.RelationshipActionReplies,
+						Action:      RelationshipActionReplies,
 						Participant: "User",
 						Technology:  "HTTP",
 						Proto:       "http",
@@ -482,7 +470,7 @@ func TestCompareSchemas_MultipleRelationshipsAdded(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 2, "Should detect two added relationships")
@@ -490,7 +478,7 @@ func TestCompareSchemas_MultipleRelationshipsAdded(t *testing.T) {
 	// Check that both relationships are detected as added
 	relationshipKeys := make(map[string]bool)
 	for _, change := range changelog.Changes {
-		assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+		assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 		assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 		relationshipKeys[change.Name] = true
 	}
@@ -500,26 +488,25 @@ func TestCompareSchemas_MultipleRelationshipsAdded(t *testing.T) {
 }
 
 func TestCompareSchemas_MultipleRelationshipsRemoved(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 					},
 					{
-						Action:      domain.RelationshipActionReplies,
+						Action:      RelationshipActionReplies,
 						Participant: "User",
 						Technology:  "HTTP",
 						Proto:       "http",
@@ -529,15 +516,15 @@ func TestCompareSchemas_MultipleRelationshipsRemoved(t *testing.T) {
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
@@ -546,7 +533,7 @@ func TestCompareSchemas_MultipleRelationshipsRemoved(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 2, "Should detect two removed relationships")
@@ -554,7 +541,7 @@ func TestCompareSchemas_MultipleRelationshipsRemoved(t *testing.T) {
 	// Check that both relationships are detected as removed
 	relationshipKeys := make(map[string]bool)
 	for _, change := range changelog.Changes {
-		assert.Equal(t, domain.ChangeTypeRemoved, change.Type, "Should be removed type")
+		assert.Equal(t, ChangeTypeRemoved, change.Type, "Should be removed type")
 		assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 		relationshipKeys[change.Name] = true
 	}
@@ -564,11 +551,10 @@ func TestCompareSchemas_MultipleRelationshipsRemoved(t *testing.T) {
 }
 
 func TestCompareSchemas_MultipleRelationshipsChanged(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createSchemaWithMultipleRelationships()
 	newSchema := createSchemaWithChangedRelationships()
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 2, "Should detect two changed relationships")
@@ -576,22 +562,22 @@ func TestCompareSchemas_MultipleRelationshipsChanged(t *testing.T) {
 	verifyChangedRelationships(t, changelog.Changes)
 }
 
-func createSchemaWithMultipleRelationships() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createSchemaWithMultipleRelationships() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Uses PostgreSQL database",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 						Description: "Uses Redis for caching",
@@ -602,22 +588,22 @@ func createSchemaWithMultipleRelationships() domain.Schema {
 	}
 }
 
-func createSchemaWithChangedRelationships() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createSchemaWithChangedRelationships() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Uses PostgreSQL database for data storage",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 						Description: "Uses Redis for caching and session storage",
@@ -628,10 +614,10 @@ func createSchemaWithChangedRelationships() domain.Schema {
 	}
 }
 
-func verifyChangedRelationships(t *testing.T, changes []domain.Change) {
+func verifyChangedRelationships(t *testing.T, changes []Change) {
 	relationshipKeys := make(map[string]bool)
 	for _, change := range changes {
-		assert.Equal(t, domain.ChangeTypeChanged, change.Type, "Should be changed type")
+		assert.Equal(t, ChangeTypeChanged, change.Type, "Should be changed type")
 		assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 		assert.NotEmpty(t, change.Diff, "Should have diff for changed relationship")
 		relationshipKeys[change.Name] = true
@@ -642,11 +628,10 @@ func verifyChangedRelationships(t *testing.T, changes []domain.Change) {
 }
 
 func TestCompareSchemas_ComplexScenario(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createComplexOldSchema()
 	newSchema := createComplexNewSchema()
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 5, "Should detect all changes")
@@ -654,34 +639,34 @@ func TestCompareSchemas_ComplexScenario(t *testing.T) {
 	verifyComplexScenarioChanges(t, changelog.Changes)
 }
 
-func createComplexOldSchema() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createComplexOldSchema() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Uses PostgreSQL database",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 					},
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionReplies,
+						Action:      RelationshipActionReplies,
 						Participant: "User",
 						Technology:  "HTTP",
 						Proto:       "http",
@@ -692,34 +677,34 @@ func createComplexOldSchema() domain.Schema {
 	}
 }
 
-func createComplexNewSchema() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createComplexNewSchema() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Uses PostgreSQL database for data storage",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Queue",
 						Technology:  "RabbitMQ",
 					},
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service C",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "MongoDB",
 					},
@@ -729,7 +714,7 @@ func createComplexNewSchema() domain.Schema {
 	}
 }
 
-func verifyComplexScenarioChanges(t *testing.T, changes []domain.Change) {
+func verifyComplexScenarioChanges(t *testing.T, changes []Change) {
 	serviceChanges := 0
 	relationshipChanges := 0
 
@@ -747,96 +732,92 @@ func verifyComplexScenarioChanges(t *testing.T, changes []domain.Change) {
 }
 
 func TestCompareSchemas_EmptySchemas(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{},
+	oldSchema := Schema{
+		Services: []Service{},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{},
+	newSchema := Schema{
+		Services: []Service{},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.Empty(t, changelog.Changes, "Should not detect any changes for empty schemas")
 }
 
 func TestCompareSchemas_EmptyToNonEmpty(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{},
+	oldSchema := Schema{
+		Services: []Service{},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one added service")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+	assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 	assert.Equal(t, "service", change.Category, "Should be service category")
 	assert.Equal(t, "Service A", change.Name, "Should have correct service name")
 }
 
 func TestCompareSchemas_NonEmptyToEmpty(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{},
+	newSchema := Schema{
+		Services: []Service{},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one removed service")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeRemoved, change.Type, "Should be removed type")
+	assert.Equal(t, ChangeTypeRemoved, change.Type, "Should be removed type")
 	assert.Equal(t, "service", change.Category, "Should be service category")
 	assert.Equal(t, "Service A", change.Name, "Should have correct service name")
 }
 
 func TestCompareSchemas_ServiceWithNoRelationships(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{},
+				Relationships: []Relationship{},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
@@ -845,28 +826,27 @@ func TestCompareSchemas_ServiceWithNoRelationships(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one added relationship")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+	assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 	assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 	assert.Equal(t, "Service A:uses|Database|PostgreSQL|", change.Name, "Should have correct relationship key")
 }
 
 func TestCompareSchemas_ServiceWithRelationshipsToNoRelationships(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
@@ -875,50 +855,49 @@ func TestCompareSchemas_ServiceWithRelationshipsToNoRelationships(t *testing.T) 
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{},
+				Relationships: []Relationship{},
 			},
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one removed relationship")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeRemoved, change.Type, "Should be removed type")
+	assert.Equal(t, ChangeTypeRemoved, change.Type, "Should be removed type")
 	assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 	assert.Equal(t, "Service A:uses|Database|PostgreSQL|", change.Name, "Should have correct relationship key")
 }
 
 func TestCompareSchemas_RelationshipWithPersonFlag(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{},
+				Relationships: []Relationship{},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionReplies,
+						Action:      RelationshipActionReplies,
 						Participant: "Data Analyst",
 						Technology:  "http-server",
 						Proto:       "http",
@@ -929,40 +908,39 @@ func TestCompareSchemas_RelationshipWithPersonFlag(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one added relationship")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+	assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 	assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 	assert.Equal(t, "Service A:replies|Data Analyst|http-server|http", change.Name, "Should have correct relationship key")
 	assert.Contains(t, change.Details, "Data Analyst", "Should mention Data Analyst in details")
 }
 
 func TestCompareSchemas_RelationshipWithEmptyProto(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{},
+				Relationships: []Relationship{},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Proto:       "",
@@ -972,29 +950,28 @@ func TestCompareSchemas_RelationshipWithEmptyProto(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one added relationship")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+	assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 	assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 	assert.Equal(t, "Service A:uses|Database|PostgreSQL|", change.Name,
 		"Should have correct relationship key with empty proto")
 }
 
 func TestCompareSchemas_RelationshipDescriptionWithSpecialCharacters(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Uses PostgreSQL database\nwith newlines and \"quotes\"",
@@ -1004,15 +981,15 @@ func TestCompareSchemas_RelationshipDescriptionWithSpecialCharacters(t *testing.
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Uses PostgreSQL database\nwith newlines and 'single quotes'",
@@ -1022,78 +999,76 @@ func TestCompareSchemas_RelationshipDescriptionWithSpecialCharacters(t *testing.
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one changed relationship")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeChanged, change.Type, "Should be changed type")
+	assert.Equal(t, ChangeTypeChanged, change.Type, "Should be changed type")
 	assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 	assert.NotEmpty(t, change.Diff, "Should have diff for changed relationship")
 	assert.Contains(t, change.Diff, "quotes", "Should contain the changed part in diff")
 }
 
 func TestCompareSchemas_ServiceNameWithSpecialCharacters(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service-A",
 				},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service-A",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service_B",
 				},
 			},
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one added service")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+	assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 	assert.Equal(t, "service", change.Category, "Should be service category")
 	assert.Equal(t, "Service_B", change.Name, "Should have correct service name with underscore")
 }
 
 func TestCompareSchemas_RelationshipWithSpecialCharacters(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{},
+				Relationships: []Relationship{},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database-Cluster",
 						Technology:  "PostgreSQL-v13",
 						Proto:       "tcp/5432",
@@ -1103,45 +1078,44 @@ func TestCompareSchemas_RelationshipWithSpecialCharacters(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one added relationship")
 
 	change := changelog.Changes[0]
-	assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+	assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 	assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 	assert.Equal(t, "Service A:uses|Database-Cluster|PostgreSQL-v13|tcp/5432", change.Name,
 		"Should handle special characters in relationship key")
 }
 
 func TestCompareSchemas_AllRelationshipActions(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{},
+				Relationships: []Relationship{},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
 					{
-						Action:      domain.RelationshipActionReplies,
+						Action:      RelationshipActionReplies,
 						Participant: "User",
 						Technology:  "HTTP",
 						Proto:       "http",
@@ -1151,7 +1125,7 @@ func TestCompareSchemas_AllRelationshipActions(t *testing.T) {
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 2, "Should detect two added relationships")
@@ -1159,7 +1133,7 @@ func TestCompareSchemas_AllRelationshipActions(t *testing.T) {
 	// Check that both relationship actions are handled correctly
 	relationshipKeys := make(map[string]bool)
 	for _, change := range changelog.Changes {
-		assert.Equal(t, domain.ChangeTypeAdded, change.Type, "Should be added type")
+		assert.Equal(t, ChangeTypeAdded, change.Type, "Should be added type")
 		assert.Equal(t, "relationship", change.Category, "Should be relationship category")
 		relationshipKeys[change.Name] = true
 	}
@@ -1169,33 +1143,32 @@ func TestCompareSchemas_AllRelationshipActions(t *testing.T) {
 }
 
 func TestCompareSchemas_ChangelogTimestampConsistency(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
-	oldSchema := domain.Schema{
-		Services: []domain.Service{
+	oldSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	newSchema := domain.Schema{
-		Services: []domain.Service{
+	newSchema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
 			},
 		},
 	}
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.NotEmpty(t, changelog.Changes, "Should detect changes")
 	assert.Len(t, changelog.Changes, 1, "Should detect one added service")
@@ -1218,40 +1191,37 @@ func TestCompareSchemas_AsyncAPIOperations(t *testing.T) {
 }
 
 func testAddedOperation(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createBasicAnalyticsSchema()
 	newSchema := createAnalyticsSchemaWithReportRequest()
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.Len(t, changelog.Changes, 1, "Should detect one added operation")
-	assert.Equal(t, domain.ChangeTypeAdded, changelog.Changes[0].Type)
+	assert.Equal(t, ChangeTypeAdded, changelog.Changes[0].Type)
 	assert.Equal(t, "operation", changelog.Changes[0].Category)
 	assert.Contains(t, changelog.Changes[0].Details, "'receive' on channel 'analytics.report.request' was added")
 }
 
 func testRemovedOperation(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createAnalyticsSchemaWithReportRequest()
 	newSchema := createBasicAnalyticsSchema()
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.Len(t, changelog.Changes, 1, "Should detect one removed operation")
-	assert.Equal(t, domain.ChangeTypeRemoved, changelog.Changes[0].Type)
+	assert.Equal(t, ChangeTypeRemoved, changelog.Changes[0].Type)
 	assert.Equal(t, "operation", changelog.Changes[0].Category)
 	assert.Contains(t, changelog.Changes[0].Details, "'receive' on channel 'analytics.report.request' was removed")
 }
 
 func testChangedMessagePayload(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createAnalyticsSchemaWithSeverity()
 	newSchema := createAnalyticsSchemaWithConfidence()
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.Len(t, changelog.Changes, 1, "Should detect one changed message")
-	assert.Equal(t, domain.ChangeTypeChanged, changelog.Changes[0].Type)
+	assert.Equal(t, ChangeTypeChanged, changelog.Changes[0].Type)
 	assert.Equal(t, "message", changelog.Changes[0].Category)
 	assert.Contains(t, changelog.Changes[0].Details,
 		"Message payload changed for operation 'send' on channel 'analytics.insights'")
@@ -1259,11 +1229,10 @@ func testChangedMessagePayload(t *testing.T) {
 }
 
 func testMultipleOperationChanges(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
 	oldSchema := createComplexOldAnalyticsSchema()
 	newSchema := createComplexNewAnalyticsSchema()
 
-	changelog := app.CompareSchemas(oldSchema, newSchema)
+	changelog := oldSchema.Compare(newSchema)
 
 	assert.Len(t, changelog.Changes, 3, "Should detect multiple changes")
 
@@ -1274,11 +1243,11 @@ func testMultipleOperationChanges(t *testing.T) {
 
 	for _, change := range changelog.Changes {
 		switch change.Type {
-		case domain.ChangeTypeAdded:
+		case ChangeTypeAdded:
 			addedCount++
-		case domain.ChangeTypeRemoved:
+		case ChangeTypeRemoved:
 			removedCount++
-		case domain.ChangeTypeChanged:
+		case ChangeTypeChanged:
 			changedCount++
 		}
 	}
@@ -1289,17 +1258,17 @@ func testMultipleOperationChanges(t *testing.T) {
 }
 
 // Helper functions to create test schemas.
-func createBasicAnalyticsSchema() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createBasicAnalyticsSchema() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{Name: "Analytics Service"},
-				Operation: []domain.Operation{
+				Info: ServiceInfo{Name: "Analytics Service"},
+				Operation: []Operation{
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "analytics.insights",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsInsightMessage",
 								Payload: `{"insight_id": "string", "title": "string"}`,
 							},
@@ -1311,27 +1280,27 @@ func createBasicAnalyticsSchema() domain.Schema {
 	}
 }
 
-func createAnalyticsSchemaWithReportRequest() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createAnalyticsSchemaWithReportRequest() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{Name: "Analytics Service"},
-				Operation: []domain.Operation{
+				Info: ServiceInfo{Name: "Analytics Service"},
+				Operation: []Operation{
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "analytics.insights",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsInsightMessage",
 								Payload: `{"insight_id": "string", "title": "string"}`,
 							},
 						},
 					},
 					{
-						Action: domain.ActionReceive,
-						Channel: domain.Channel{
+						Action: ActionReceive,
+						Channel: Channel{
 							Name: "analytics.report.request",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsReportRequestMessage",
 								Payload: `{"report_id": "string", "format": "string"}`,
 							},
@@ -1343,17 +1312,17 @@ func createAnalyticsSchemaWithReportRequest() domain.Schema {
 	}
 }
 
-func createAnalyticsSchemaWithSeverity() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createAnalyticsSchemaWithSeverity() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{Name: "Analytics Service"},
-				Operation: []domain.Operation{
+				Info: ServiceInfo{Name: "Analytics Service"},
+				Operation: []Operation{
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "analytics.insights",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsInsightMessage",
 								Payload: `{"insight_id": "string", "title": "string", "severity": "string"}`,
 							},
@@ -1365,17 +1334,17 @@ func createAnalyticsSchemaWithSeverity() domain.Schema {
 	}
 }
 
-func createAnalyticsSchemaWithConfidence() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createAnalyticsSchemaWithConfidence() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{Name: "Analytics Service"},
-				Operation: []domain.Operation{
+				Info: ServiceInfo{Name: "Analytics Service"},
+				Operation: []Operation{
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "analytics.insights",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsInsightMessage",
 								Payload: `{"insight_id": "string", "title": "string", "confidence": "number"}`,
 							},
@@ -1387,27 +1356,27 @@ func createAnalyticsSchemaWithConfidence() domain.Schema {
 	}
 }
 
-func createComplexOldAnalyticsSchema() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createComplexOldAnalyticsSchema() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{Name: "Analytics Service"},
-				Operation: []domain.Operation{
+				Info: ServiceInfo{Name: "Analytics Service"},
+				Operation: []Operation{
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "analytics.insights",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsInsightMessage",
 								Payload: `{"insight_id": "string", "title": "string"}`,
 							},
 						},
 					},
 					{
-						Action: domain.ActionReceive,
-						Channel: domain.Channel{
+						Action: ActionReceive,
+						Channel: Channel{
 							Name: "analytics.report.request",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsReportRequestMessage",
 								Payload: `{"report_id": "string"}`,
 							},
@@ -1419,27 +1388,27 @@ func createComplexOldAnalyticsSchema() domain.Schema {
 	}
 }
 
-func createComplexNewAnalyticsSchema() domain.Schema {
-	return domain.Schema{
-		Services: []domain.Service{
+func createComplexNewAnalyticsSchema() Schema {
+	return Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{Name: "Analytics Service"},
-				Operation: []domain.Operation{
+				Info: ServiceInfo{Name: "Analytics Service"},
+				Operation: []Operation{
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "analytics.insights",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsInsightMessage",
 								Payload: `{"insight_id": "string", "title": "string", "confidence": "number"}`,
 							},
 						},
 					},
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "analytics.warning",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "AnalyticsWarningMessage",
 								Payload: `{"warning_id": "string", "severity": "string"}`,
 							},
@@ -1452,98 +1421,91 @@ func createComplexNewAnalyticsSchema() domain.Schema {
 }
 
 func TestOperationKey(t *testing.T) {
-	app := NewApp(nil, nil, nil, nil)
 	t.Run("SimpleOperation", func(t *testing.T) {
-		op := domain.Operation{
-			Action: domain.ActionSend,
-			Channel: domain.Channel{
+		op := Operation{
+			Action: ActionSend,
+			Channel: Channel{
 				Name: "analytics.insights",
-				Message: domain.Message{
+				Message: Message{
 					Name:    "AnalyticsInsightMessage",
 					Payload: `{"insight_id": "string"}`,
 				},
 			},
 		}
 
-		key := app.operationKey(op)
+		key := OperationKey(op)
 		assert.Equal(t, "send:analytics.insights", key)
 	})
 
 	t.Run("OperationWithReply", func(t *testing.T) {
-		op := domain.Operation{
-			Action: domain.ActionReceive,
-			Channel: domain.Channel{
+		op := Operation{
+			Action: ActionReceive,
+			Channel: Channel{
 				Name: "analytics.report.request",
-				Message: domain.Message{
+				Message: Message{
 					Name:    "AnalyticsReportRequestMessage",
 					Payload: `{"report_id": "string"}`,
 				},
 			},
-			Reply: &domain.Channel{
+			Reply: &Channel{
 				Name: "analytics.report.reply",
-				Message: domain.Message{
+				Message: Message{
 					Name:    "AnalyticsReportReplyMessage",
 					Payload: `{"data": "object"}`,
 				},
 			},
 		}
 
-		key := app.operationKey(op)
+		key := OperationKey(op)
 		assert.Equal(t, "receive:analytics.report.request:analytics.report.reply", key)
 	})
 }
 
 func TestApp_MergeSchemas_EmptySchemas(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	result := app.MergeSchemas()
+	result := MergeSchemas()
 	assert.Empty(t, result.Services)
 }
 
 func TestApp_MergeSchemas_SingleSchema(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{
+	schema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	result := app.MergeSchemas(schema)
+	result := MergeSchemas(schema)
 	assert.Len(t, result.Services, 1)
 	assert.Equal(t, "Service A", result.Services[0].Info.Name)
 }
 
 func TestApp_MergeSchemas_MultipleSchemasNoOverlap(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema1 := domain.Schema{
-		Services: []domain.Service{
+	schema1 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
-	schema2 := domain.Schema{
-		Services: []domain.Service{
+	schema2 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
 			},
 		},
 	}
 
-	result := app.MergeSchemas(schema1, schema2)
+	result := MergeSchemas(schema1, schema2)
 	assert.Len(t, result.Services, 2)
 	serviceNames := []string{result.Services[0].Info.Name, result.Services[1].Info.Name}
 	assert.Contains(t, serviceNames, "Service A")
@@ -1552,19 +1514,17 @@ func TestApp_MergeSchemas_MultipleSchemasNoOverlap(t *testing.T) {
 
 func TestApp_MergeSchemas_OverlappingServices(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema1 := domain.Schema{
-		Services: []domain.Service{
+	schema1 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name:        "Service A",
 					Description: "First description",
 					System:      "System 1",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
@@ -1572,17 +1532,17 @@ func TestApp_MergeSchemas_OverlappingServices(t *testing.T) {
 			},
 		},
 	}
-	schema2 := domain.Schema{
-		Services: []domain.Service{
+	schema2 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name:        "Service A",
 					Description: "Second description (longer)",
 					Owner:       "Team A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 					},
@@ -1591,7 +1551,7 @@ func TestApp_MergeSchemas_OverlappingServices(t *testing.T) {
 		},
 	}
 
-	result := app.MergeSchemas(schema1, schema2)
+	result := MergeSchemas(schema1, schema2)
 	assert.Len(t, result.Services, 1)
 	service := result.Services[0]
 	assert.Equal(t, "Service A", service.Info.Name)
@@ -1603,65 +1563,59 @@ func TestApp_MergeSchemas_OverlappingServices(t *testing.T) {
 
 func TestApp_MergeSchemas_EmptyServiceName(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{
+	schema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	result := app.MergeSchemas(schema)
+	result := MergeSchemas(schema)
 	assert.Len(t, result.Services, 1)
 	assert.Equal(t, "Service A", result.Services[0].Info.Name)
 }
 
 func TestApp_MergeSchemas_WhitespaceServiceName(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{
+	schema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "   ",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 		},
 	}
 
-	result := app.MergeSchemas(schema)
+	result := MergeSchemas(schema)
 	assert.Len(t, result.Services, 1)
 	assert.Equal(t, "Service A", result.Services[0].Info.Name)
 }
 
 func TestApp_MergeSchemas_DuplicateRelationships(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema1 := domain.Schema{
-		Services: []domain.Service{
+	schema1 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Original description",
@@ -1670,15 +1624,15 @@ func TestApp_MergeSchemas_DuplicateRelationships(t *testing.T) {
 			},
 		},
 	}
-	schema2 := domain.Schema{
-		Services: []domain.Service{
+	schema2 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 						Description: "Updated description (longer)",
@@ -1688,7 +1642,7 @@ func TestApp_MergeSchemas_DuplicateRelationships(t *testing.T) {
 		},
 	}
 
-	result := app.MergeSchemas(schema1, schema2)
+	result := MergeSchemas(schema1, schema2)
 	assert.Len(t, result.Services, 1)
 	assert.Len(t, result.Services[0].Relationships, 1)
 	assert.Equal(t, "Updated description (longer)", result.Services[0].Relationships[0].Description)
@@ -1696,20 +1650,18 @@ func TestApp_MergeSchemas_DuplicateRelationships(t *testing.T) {
 
 func TestApp_MergeSchemas_DuplicateOperations(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema1 := domain.Schema{
-		Services: []domain.Service{
+	schema1 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Operation: []domain.Operation{
+				Operation: []Operation{
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "test.channel",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "TestMessage",
 								Payload: "{}",
 							},
@@ -1719,25 +1671,25 @@ func TestApp_MergeSchemas_DuplicateOperations(t *testing.T) {
 			},
 		},
 	}
-	schema2 := domain.Schema{
-		Services: []domain.Service{
+	schema2 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Operation: []domain.Operation{
+				Operation: []Operation{
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "test.channel",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "TestMessage",
 								Payload: "{}",
 							},
 						},
-						Reply: &domain.Channel{
+						Reply: &Channel{
 							Name: "test.reply",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "ReplyMessage",
 								Payload: "{}",
 							},
@@ -1748,7 +1700,7 @@ func TestApp_MergeSchemas_DuplicateOperations(t *testing.T) {
 		},
 	}
 
-	result := app.MergeSchemas(schema1, schema2)
+	result := MergeSchemas(schema1, schema2)
 	assert.Len(t, result.Services, 1)
 	// Operations with different reply fields have different signatures, so both should be present
 	assert.Len(t, result.Services[0].Operation, 2)
@@ -1758,7 +1710,7 @@ func TestApp_MergeSchemas_DuplicateOperations(t *testing.T) {
 	assert.Equal(t, "test.reply", opWithReply.Reply.Name)
 }
 
-func findOperationWithReply(ops []domain.Operation) *domain.Operation {
+func findOperationWithReply(ops []Operation) *Operation {
 	for i := range ops {
 		if ops[i].Reply != nil {
 			return &ops[i]
@@ -1770,22 +1722,20 @@ func findOperationWithReply(ops []domain.Operation) *domain.Operation {
 
 func TestApp_MergeSchemas_TagsDeduplication(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema1 := domain.Schema{
-		Services: []domain.Service{
+	schema1 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 					Tags: []string{"tag1", "tag2"},
 				},
 			},
 		},
 	}
-	schema2 := domain.Schema{
-		Services: []domain.Service{
+	schema2 := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 					Tags: []string{"tag2", "tag3"},
 				},
@@ -1793,7 +1743,7 @@ func TestApp_MergeSchemas_TagsDeduplication(t *testing.T) {
 		},
 	}
 
-	result := app.MergeSchemas(schema1, schema2)
+	result := MergeSchemas(schema1, schema2)
 	assert.Len(t, result.Services, 1)
 	// Tags should be deduplicated
 	tags := result.Services[0].Info.Tags
@@ -1804,41 +1754,37 @@ func TestApp_MergeSchemas_TagsDeduplication(t *testing.T) {
 
 func TestApp_SortSchema_EmptySchema(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{},
+	schema := Schema{
+		Services: []Service{},
 	}
 
-	app.SortSchema(&schema)
+	schema.Sort()
 	assert.Empty(t, schema.Services)
 }
 
 func TestApp_SortSchema_ServicesByName(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{
+	schema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service C",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
 			},
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service B",
 				},
 			},
 		},
 	}
 
-	app.SortSchema(&schema)
+	schema.Sort()
 	assert.Equal(t, "Service A", schema.Services[0].Info.Name)
 	assert.Equal(t, "Service B", schema.Services[1].Info.Name)
 	assert.Equal(t, "Service C", schema.Services[2].Info.Name)
@@ -1846,27 +1792,25 @@ func TestApp_SortSchema_ServicesByName(t *testing.T) {
 
 func TestApp_SortSchema_Relationships(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{
+	schema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{
+				Relationships: []Relationship{
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Database",
 						Technology:  "PostgreSQL",
 					},
 					{
-						Action:      domain.RelationshipActionReplies,
+						Action:      RelationshipActionReplies,
 						Participant: "Client",
 						Technology:  "HTTP",
 					},
 					{
-						Action:      domain.RelationshipActionUses,
+						Action:      RelationshipActionUses,
 						Participant: "Cache",
 						Technology:  "Redis",
 					},
@@ -1875,11 +1819,11 @@ func TestApp_SortSchema_Relationships(t *testing.T) {
 		},
 	}
 
-	app.SortSchema(&schema)
+	schema.Sort()
 	rels := schema.Services[0].Relationships
-	assert.Equal(t, domain.RelationshipActionReplies, rels[0].Action)
-	assert.Equal(t, domain.RelationshipActionUses, rels[1].Action)
-	assert.Equal(t, domain.RelationshipActionUses, rels[2].Action)
+	assert.Equal(t, RelationshipActionReplies, rels[0].Action)
+	assert.Equal(t, RelationshipActionUses, rels[1].Action)
+	assert.Equal(t, RelationshipActionUses, rels[2].Action)
 	// Within same action, should be sorted by participant
 	assert.Equal(t, "Cache", rels[1].Participant)
 	assert.Equal(t, "Database", rels[2].Participant)
@@ -1887,40 +1831,38 @@ func TestApp_SortSchema_Relationships(t *testing.T) {
 
 func TestApp_SortSchema_Operations(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{
+	schema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Operation: []domain.Operation{
+				Operation: []Operation{
 					{
-						Action: domain.ActionReceive,
-						Channel: domain.Channel{
+						Action: ActionReceive,
+						Channel: Channel{
 							Name: "channel.b",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "MessageB",
 								Payload: "{}",
 							},
 						},
 					},
 					{
-						Action: domain.ActionSend,
-						Channel: domain.Channel{
+						Action: ActionSend,
+						Channel: Channel{
 							Name: "channel.a",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "MessageA",
 								Payload: "{}",
 							},
 						},
 					},
 					{
-						Action: domain.ActionReceive,
-						Channel: domain.Channel{
+						Action: ActionReceive,
+						Channel: Channel{
 							Name: "channel.a",
-							Message: domain.Message{
+							Message: Message{
 								Name:    "MessageA",
 								Payload: "{}",
 							},
@@ -1931,11 +1873,11 @@ func TestApp_SortSchema_Operations(t *testing.T) {
 		},
 	}
 
-	app.SortSchema(&schema)
+	schema.Sort()
 	ops := schema.Services[0].Operation
-	assert.Equal(t, domain.ActionReceive, ops[0].Action)
-	assert.Equal(t, domain.ActionReceive, ops[1].Action)
-	assert.Equal(t, domain.ActionSend, ops[2].Action)
+	assert.Equal(t, ActionReceive, ops[0].Action)
+	assert.Equal(t, ActionReceive, ops[1].Action)
+	assert.Equal(t, ActionSend, ops[2].Action)
 	// Within same action, should be sorted by channel name
 	assert.Equal(t, "channel.a", ops[0].Channel.Name)
 	assert.Equal(t, "channel.b", ops[1].Channel.Name)
@@ -1943,21 +1885,19 @@ func TestApp_SortSchema_Operations(t *testing.T) {
 
 func TestApp_SortSchema_ServiceWithNoRelationshipsOrOperations(t *testing.T) {
 	t.Parallel()
-
-	app := NewApp(nil, nil, nil, nil)
-	schema := domain.Schema{
-		Services: []domain.Service{
+	schema := Schema{
+		Services: []Service{
 			{
-				Info: domain.ServiceInfo{
+				Info: ServiceInfo{
 					Name: "Service A",
 				},
-				Relationships: []domain.Relationship{},
-				Operation:     []domain.Operation{},
+				Relationships: []Relationship{},
+				Operation:     []Operation{},
 			},
 		},
 	}
 
-	app.SortSchema(&schema)
+	schema.Sort()
 	assert.Equal(t, "Service A", schema.Services[0].Info.Name)
 	assert.Empty(t, schema.Services[0].Relationships)
 	assert.Empty(t, schema.Services[0].Operation)

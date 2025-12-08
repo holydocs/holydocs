@@ -15,7 +15,6 @@ import (
 
 	d2target "github.com/holydocs/holydocs/internal/adapters/secondary/target/d2"
 	"github.com/holydocs/holydocs/internal/config"
-	"github.com/holydocs/holydocs/internal/core/app"
 	"github.com/holydocs/holydocs/internal/core/domain"
 	mf "github.com/holydocs/messageflow/pkg/messageflow"
 	do "github.com/samber/do/v2"
@@ -162,16 +161,10 @@ func convertAsyncEdges(edges []asyncEdge) []domain.AsyncEdge {
 }
 
 // Generator implements the DocumentationGenerator interface.
-type Generator struct {
-	app *app.App
-}
+type Generator struct{}
 
-func NewGenerator(i do.Injector) (*Generator, error) {
-	appInstance := do.MustInvoke[*app.App](i)
-
-	return &Generator{
-		app: appInstance,
-	}, nil
+func NewGenerator(_ do.Injector) (*Generator, error) {
+	return &Generator{}, nil
 }
 
 // Generate produces the documentation bundle (markdown + diagrams) for the provided schemas.
@@ -188,7 +181,7 @@ func (g *Generator) Generate(
 	}
 
 	// Sort schemas before processing to ensure consistent ordering
-	g.app.SortSchema(&schema)
+	schema.Sort()
 	messageflowSchema.Sort()
 
 	metadata, newChangelog, err := g.processMetadata(schema, cfg.Output.Dir)
@@ -226,7 +219,7 @@ func (g *Generator) processMetadata(schema domain.Schema, outputDir string) (*Me
 	)
 
 	if existingMetadata != nil {
-		changelog := g.app.CompareSchemas(existingMetadata.Schema, schema)
+		changelog := existingMetadata.Schema.Compare(schema)
 		if len(changelog.Changes) > 0 {
 			newChangelog = &changelog
 		}
