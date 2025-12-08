@@ -25,6 +25,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func setupTestGenerator(t *testing.T, target domain.Target, cfg *config.Config) *Generator {
+	injector := do.New()
+	do.ProvideValue(injector, target)
+	do.ProvideValue(injector, cfg)
+	generator, err := NewGenerator(injector)
+	require.NoError(t, err)
+
+	return generator
+}
+
 func TestGenerateDocs(t *testing.T) {
 	t.Parallel()
 
@@ -52,9 +62,8 @@ func TestGenerateDocs(t *testing.T) {
 	// Update the config to use the test output directory
 	cfg.Output.Dir = outputDir
 
-	generator, err := NewGenerator(do.New())
-	require.NoError(t, err)
-	_, err = generator.Generate(ctx, holydocsSchema, holydocsTarget, mfSchema, mfTarget, cfg)
+	generator := setupTestGenerator(t, holydocsTarget, cfg)
+	_, err = generator.Generate(ctx, holydocsSchema, mfSchema, mfTarget)
 	if err != nil {
 		t.Fatalf("generate docs: %v", err)
 	}
@@ -135,8 +144,10 @@ func TestProcessMetadata_FirstRun(t *testing.T) {
 		},
 	}
 
-	generator, err := NewGenerator(do.New())
+	cfg := &config.Config{Output: config.Output{Dir: tempDir}}
+	target, err := d2target.NewTarget(config.D2Config{})
 	require.NoError(t, err)
+	generator := setupTestGenerator(t, target, cfg)
 	metadata, newChangelog, err := generator.processMetadata(schema, tempDir)
 
 	require.NoError(t, err)
@@ -159,8 +170,10 @@ func TestProcessMetadata_SecondRunNoChanges(t *testing.T) {
 		},
 	}
 
-	generator, err := NewGenerator(do.New())
+	cfg := &config.Config{Output: config.Output{Dir: tempDir}}
+	target, err := d2target.NewTarget(config.D2Config{})
 	require.NoError(t, err)
+	generator := setupTestGenerator(t, target, cfg)
 
 	// First run
 	_, _, err = generator.processMetadata(schema, tempDir)
@@ -203,8 +216,10 @@ func TestProcessMetadata_SecondRunWithChanges(t *testing.T) {
 		},
 	}
 
-	generator, err := NewGenerator(do.New())
+	cfg := &config.Config{Output: config.Output{Dir: tempDir}}
+	target, err := d2target.NewTarget(config.D2Config{})
 	require.NoError(t, err)
+	generator := setupTestGenerator(t, target, cfg)
 
 	// First run
 	_, _, err = generator.processMetadata(oldSchema, tempDir)

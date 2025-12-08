@@ -27,10 +27,8 @@ type DocumentationGenerator interface {
 	Generate(
 		ctx context.Context,
 		schema domain.Schema,
-		holydocsTarget domain.Target,
 		messageflowSchema messageflow.Schema,
 		messageflowTarget messageflow.Target,
-		cfg *config.Config,
 	) (*domain.Changelog, error)
 }
 
@@ -72,7 +70,7 @@ func (a *App) GenerateDocumentation(
 		return domain.GenerateDocumentationReply{}, fmt.Errorf("setting up message flow target: %w", err)
 	}
 
-	changelog, err := a.docsGenerator.Generate(ctx, schema, a.target, mfSetup.Schema, mfSetup.Target, a.config)
+	changelog, err := a.docsGenerator.Generate(ctx, schema, mfSetup.Schema, mfSetup.Target)
 	if err != nil {
 		return domain.GenerateDocumentationReply{}, fmt.Errorf("generating documentation: %w", err)
 	}

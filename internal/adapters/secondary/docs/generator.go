@@ -161,22 +161,29 @@ func convertAsyncEdges(edges []asyncEdge) []domain.AsyncEdge {
 }
 
 // Generator implements the DocumentationGenerator interface.
-type Generator struct{}
+type Generator struct {
+	target domain.Target
+	config *config.Config
+}
 
-func NewGenerator(_ do.Injector) (*Generator, error) {
-	return &Generator{}, nil
+func NewGenerator(i do.Injector) (*Generator, error) {
+	target := do.MustInvoke[domain.Target](i)
+	cfg := do.MustInvoke[*config.Config](i)
+
+	return &Generator{
+		target: target,
+		config: cfg,
+	}, nil
 }
 
 // Generate produces the documentation bundle (markdown + diagrams) for the provided schemas.
 func (g *Generator) Generate(
 	ctx context.Context,
 	schema domain.Schema,
-	holydocsTarget domain.Target,
 	messageflowSchema mf.Schema,
 	messageflowTarget mf.Target,
-	cfg *config.Config,
 ) (*domain.Changelog, error) {
-	if holydocsTarget == nil {
+	if g.target == nil {
 		return nil, ErrHolydocsTargetRequired
 	}
 
@@ -184,12 +191,12 @@ func (g *Generator) Generate(
 	schema.Sort()
 	messageflowSchema.Sort()
 
-	metadata, newChangelog, err := g.processMetadata(schema, cfg.Output.Dir)
+	metadata, newChangelog, err := g.processMetadata(schema, g.config.Output.Dir)
 	if err != nil {
 		return nil, fmt.Errorf("error processing metadata: %w", err)
 	}
 
-	outputDirs, err := setupOutputDirectories(cfg.Output.Dir)
+	outputDirs, err := setupOutputDirectories(g.config.Output.Dir)
 	if err != nil {
 		return nil, err
 	}
@@ -197,14 +204,14 @@ func (g *Generator) Generate(
 	asyncEdges := buildAsyncEdges(messageflowSchema)
 
 	diagramResults, err := generateAllDiagrams(
-		ctx, schema, asyncEdges, holydocsTarget, messageflowSchema, messageflowTarget, cfg, outputDirs)
+		ctx, schema, asyncEdges, g.target, messageflowSchema, messageflowTarget, g.config, outputDirs)
 	if err != nil {
 		return nil, err
 	}
 
-	data := buildTemplateData(cfg, diagramResults, metadata.Changelogs)
+	data := buildTemplateData(g.config, diagramResults, metadata.Changelogs)
 
-	return newChangelog, writeReadme(cfg.Output.Dir, data)
+	return newChangelog, writeReadme(g.config.Output.Dir, data)
 }
 
 func (g *Generator) processMetadata(schema domain.Schema, outputDir string) (*Metadata, *domain.Changelog, error) {
