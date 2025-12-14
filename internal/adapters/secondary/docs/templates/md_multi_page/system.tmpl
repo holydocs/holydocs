@@ -1,0 +1,34 @@
+# [←](../README.md) | {{ .System.Name }}
+
+{{- $systemDiagram := .SystemDiagram }}
+{{- if and $systemDiagram $systemDiagram.SystemDiagram $systemDiagram.SystemD2 }}
+![{{ .System.Name }}]({{ $systemDiagram.SystemDiagram }})
+
+{{- end }}
+{{- if .SystemMarkdown }}
+{{ .SystemMarkdown }}
+
+{{- end }}
+
+## Services
+
+{{- range .System.Services }}
+### [{{ .Name }}]({{ .FilePath }})
+
+{{- if .Description }}
+{{ .Description }}
+
+{{- end }}
+{{- if or .System .Owner .Repository .Tags }}
+{{ if .System }}- System: {{ .System }}
+{{ end }}
+{{ if .Owner }}- Owner: {{ .Owner }}
+{{ end }}
+{{ if .Repository }}- Repository: [{{ .Repository }}]({{ .Repository }})
+{{ end }}
+{{ if .Tags }}- Tags: {{ Join .Tags ", " }}
+{{ end }}
+
+{{- end }}
+
+{{- end }}

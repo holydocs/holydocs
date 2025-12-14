@@ -1,0 +1,460 @@
+{
+  "schema": {
+    "services": [
+      {
+        "info": {
+          "name": "Analytics Service",
+          "description": "A centralized analytics service that receives and processes analytics events from all other services.\nProvides insights, reporting, and analytics data aggregation for user behavior, notification performance,\ncampaign effectiveness, and system-wide metrics.\n",
+          "system": "Analytics System",
+          "owner": "team-data-science",
+          "repository": "https://github.com/holydocs/analytics-service",
+          "tags": [
+            "analytics",
+            "data-science"
+          ]
+        },
+        "relationships": [
+          {
+            "action": "replies",
+            "participant": "Data Analyst",
+            "description": "A data analyst who is responsible for analyzing data and providing insights.\n",
+            "technology": "http-server",
+            "proto": "http",
+            "person": true
+          },
+          {
+            "action": "uses",
+            "participant": "clickhouse",
+            "description": "Uses ClickHouse database",
+            "technology": "ClickHouse"
+          }
+        ],
+        "operations": [
+          {
+            "action": "receive",
+            "channel": {
+              "name": "analytics.report.request",
+              "message": {
+                "name": "AnalyticsReportRequestMessage",
+                "payload": "{\n  \"created_at\": \"string[date-time]\",\n  \"filters\": {\n    \"campaign_ids\": [\n      \"string[uuid]\"\n    ],\n    \"event_types\": [\n      \"string\"\n    ],\n    \"user_ids\": [\n      \"string[uuid]\"\n    ],\n    \"user_segments\": [\n      \"string[enum:all_users,new_users,active_users,inactive_users,premium_users,free_users]\"\n    ]\n  },\n  \"format\": \"string[enum:json,csv,pdf]\",\n  \"metrics\": [\n    \"string[enum:event_count,user_count,conversion_rate,engagement_rate,response_time,error_rate]\"\n  ],\n  \"report_id\": \"string[uuid]\",\n  \"report_type\": \"string[enum:user_activity,notification_performance,campaign_effectiveness,system_health,custom]\",\n  \"time_range\": {\n    \"end\": \"string[date-time]\",\n    \"granularity\": \"string[enum:minute,hour,day,week,month]\",\n    \"start\": \"string[date-time]\"\n  }\n}"
+              }
+            },
+            "reply": {
+              "name": "analytics.report.request",
+              "message": {
+                "name": "AnalyticsReportReplyMessage",
+                "payload": "{\n  \"data\": \"object\",\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\"\n  },\n  \"generated_at\": \"string[date-time]\",\n  \"insights\": [\n    {\n      \"confidence\": \"number[float]\",\n      \"data_points\": [\n        \"object\"\n      ],\n      \"description\": \"string\",\n      \"impact\": \"string[enum:low,medium,high]\",\n      \"title\": \"string\",\n      \"type\": \"string[enum:trend,anomaly,correlation,recommendation]\"\n    }\n  ],\n  \"report_id\": \"string[uuid]\",\n  \"report_type\": \"string[enum:user_activity,notification_performance,campaign_effectiveness,system_health,custom]\",\n  \"summary\": {\n    \"event_types\": \"object\",\n    \"top_metrics\": {\n      \"conversion_rate\": \"number[float]\",\n      \"engagement_rate\": \"number[float]\",\n      \"error_rate\": \"number[float]\",\n      \"response_time_avg\": \"number[float]\"\n    },\n    \"total_events\": \"integer\",\n    \"unique_users\": \"integer\"\n  },\n  \"time_range\": {\n    \"end\": \"string[date-time]\",\n    \"granularity\": \"string[enum:minute,hour,day,week,month]\",\n    \"start\": \"string[date-time]\"\n  }\n}"
+              }
+            }
+          },
+          {
+            "action": "receive",
+            "channel": {
+              "name": "campaign.analytics",
+              "message": {
+                "name": "CampaignAnalyticsEventMessage",
+                "payload": "{\n  \"campaign_id\": \"string[uuid]\",\n  \"event_id\": \"string[uuid]\",\n  \"event_type\": \"string[enum:campaign_created,campaign_executed,notification_sent,notification_opened,notification_clicked,campaign_completed,campaign_failed]\",\n  \"execution_id\": \"string[uuid]\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"notification_id\": \"string[uuid]\",\n  \"timestamp\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "receive",
+            "channel": {
+              "name": "notification.analytics",
+              "message": {
+                "name": "NotificationAnalyticsEventMessage",
+                "payload": "{\n  \"event_id\": \"string[uuid]\",\n  \"event_type\": \"string[enum:notification_sent,notification_opened,notification_clicked]\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"notification_id\": \"string[uuid]\",\n  \"timestamp\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "receive",
+            "channel": {
+              "name": "user.analytics",
+              "message": {
+                "name": "UserAnalyticsEventMessage",
+                "payload": "{\n  \"event_id\": \"string[uuid]\",\n  \"event_type\": \"string[enum:user_registered,user_logged_in,profile_updated,preferences_changed,account_deleted]\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"timestamp\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "analytics.alert",
+              "message": {
+                "name": "AnalyticsAlertMessage",
+                "payload": "{\n  \"actions\": [\n    \"string\"\n  ],\n  \"affected_services\": [\n    \"string[enum:user_service,notification_service,campaign_service]\"\n  ],\n  \"alert_id\": \"string[uuid]\",\n  \"alert_type\": \"string[enum:anomaly_detected,threshold_exceeded,trend_change,system_issue]\",\n  \"created_at\": \"string[date-time]\",\n  \"current_value\": \"number\",\n  \"description\": \"string\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"metric\": \"string\",\n  \"severity\": \"string[enum:low,medium,high,critical]\",\n  \"threshold\": \"number\",\n  \"time_window\": \"string\",\n  \"title\": \"string\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "analytics.insights",
+              "message": {
+                "name": "AnalyticsInsightMessage",
+                "payload": "{\n  \"category\": \"string[enum:user_behavior,notification_performance,campaign_effectiveness,system_health]\",\n  \"confidence\": \"number[float]\",\n  \"created_at\": \"string[date-time]\",\n  \"data_points\": [\n    \"object\"\n  ],\n  \"description\": \"string\",\n  \"insight_id\": \"string[uuid]\",\n  \"insight_type\": \"string[enum:trend,anomaly,recommendation,alert]\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"recommendations\": [\n    \"string\"\n  ],\n  \"severity\": \"string[enum:low,medium,high,critical]\",\n  \"title\": \"string\"\n}"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "info": {
+          "name": "Campaign Service",
+          "description": "A service that manages notification campaigns, user targeting, and campaign execution.\nHandles campaign creation, user segmentation, scheduling, and personalized notification delivery.\nUses user data for targeting and personalization of campaign messages.\n"
+        },
+        "relationships": [
+          {
+            "action": "replies",
+            "participant": "Marketing Manager",
+            "description": "A marketing manager who is responsible for creating and managing campaigns.\n",
+            "technology": "http-server",
+            "proto": "http",
+            "person": true
+          },
+          {
+            "action": "uses",
+            "participant": "postgres",
+            "description": "Uses PostgreSQL database",
+            "technology": "PostgreSQL"
+          },
+          {
+            "action": "uses",
+            "participant": "redis",
+            "description": "Uses Redis database",
+            "technology": "Redis"
+          }
+        ],
+        "operations": [
+          {
+            "action": "receive",
+            "channel": {
+              "name": "campaign.create",
+              "message": {
+                "name": "CampaignCreateMessage",
+                "payload": "{\n  \"campaign_id\": \"string[uuid]\",\n  \"created_at\": \"string[date-time]\",\n  \"description\": \"string\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"name\": \"string\",\n  \"notification_template\": {\n    \"body_template\": \"string\",\n    \"data\": \"object\",\n    \"localization\": \"object\",\n    \"priority\": \"string[enum:low,normal,high]\",\n    \"title_template\": \"string\"\n  },\n  \"schedule\": {\n    \"recurring\": {\n      \"end_date\": \"string[date]\",\n      \"frequency\": \"string[enum:daily,weekly,monthly]\",\n      \"interval\": \"integer\",\n      \"start_date\": \"string[date]\"\n    },\n    \"scheduled_at\": \"string[date-time]\",\n    \"timezone\": \"string\",\n    \"type\": \"string[enum:immediate,scheduled,recurring]\"\n  },\n  \"settings\": {\n    \"a_b_testing\": {\n      \"enabled\": \"boolean\",\n      \"traffic_split\": [\n        \"number\"\n      ],\n      \"variants\": [\n        {\n          \"body_template\": \"string\",\n          \"data\": \"object\",\n          \"localization\": \"object\",\n          \"priority\": \"string[enum:low,normal,high]\",\n          \"title_template\": \"string\"\n        }\n      ]\n    },\n    \"batch_size\": \"integer\",\n    \"max_retries\": \"integer\",\n    \"rate_limit\": \"integer\",\n    \"respect_quiet_hours\": \"boolean\"\n  },\n  \"target_audience\": {\n    \"estimated_reach\": \"integer\",\n    \"user_filters\": {\n      \"language\": [\n        \"string\"\n      ],\n      \"last_activity\": {\n        \"from\": \"string[date-time]\",\n        \"to\": \"string[date-time]\"\n      },\n      \"registration_date\": {\n        \"from\": \"string[date]\",\n        \"to\": \"string[date]\"\n      },\n      \"timezone\": [\n        \"string\"\n      ]\n    },\n    \"user_segments\": [\n      \"string[enum:all_users,new_users,active_users,inactive_users,premium_users,free_users]\"\n    ]\n  }\n}"
+              }
+            }
+          },
+          {
+            "action": "receive",
+            "channel": {
+              "name": "campaign.execute",
+              "message": {
+                "name": "CampaignExecuteMessage",
+                "payload": "{\n  \"batch_size\": \"integer\",\n  \"campaign_id\": \"string[uuid]\",\n  \"created_at\": \"string[date-time]\",\n  \"execution_id\": \"string[uuid]\",\n  \"execution_type\": \"string[enum:immediate,scheduled,batch]\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"priority\": \"string[enum:low,normal,high]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "campaign.analytics",
+              "message": {
+                "name": "CampaignAnalyticsEventMessage",
+                "payload": "{\n  \"campaign_id\": \"string[uuid]\",\n  \"event_id\": \"string[uuid]\",\n  \"event_type\": \"string[enum:campaign_created,campaign_executed,notification_sent,notification_opened,notification_clicked,campaign_completed,campaign_failed]\",\n  \"execution_id\": \"string[uuid]\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"notification_id\": \"string[uuid]\",\n  \"timestamp\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "campaign.status",
+              "message": {
+                "name": "CampaignStatusUpdateMessage",
+                "payload": "{\n  \"campaign_id\": \"string[uuid]\",\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\"\n  },\n  \"execution_id\": \"string[uuid]\",\n  \"progress\": {\n    \"failed\": \"integer\",\n    \"sent\": \"integer\",\n    \"success_rate\": \"number[float]\",\n    \"total_targets\": \"integer\"\n  },\n  \"status\": \"string[enum:pending,running,completed,failed,paused,cancelled]\",\n  \"updated_at\": \"string[date-time]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "notification.user.{user_id}.push",
+              "message": {
+                "name": "PushNotificationMessage",
+                "payload": "{\n  \"body\": \"string\",\n  \"created_at\": \"string[date-time]\",\n  \"data\": \"object\",\n  \"notification_id\": \"string[uuid]\",\n  \"priority\": \"string[enum:low,normal,high]\",\n  \"title\": \"string\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "user.info.request",
+              "message": {
+                "name": "UserInfoRequestMessage",
+                "payload": "{\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            },
+            "reply": {
+              "name": "user.info.request",
+              "message": {
+                "name": "UserInfoReplyMessage",
+                "payload": "{\n  \"email\": \"string[email]\",\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\"\n  },\n  \"language\": \"string\",\n  \"name\": \"string\",\n  \"timezone\": \"string\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "info": {
+          "name": "Mailer Service",
+          "description": "A service that handles email delivery through SendGrid. Receives email requests\nfrom other services and processes them for delivery. Supports various email types\nincluding transactional emails, notifications, and marketing campaigns.\n",
+          "system": "Notification System",
+          "owner": "team-notifications",
+          "repository": "https://github.com/holydocs/mailer-service",
+          "tags": [
+            "email",
+            "notifications",
+            "sendgrid",
+            "delivery"
+          ]
+        },
+        "relationships": [
+          {
+            "action": "requests",
+            "participant": "SendGrid",
+            "description": "A cloud-based email infrastructure platform that helps businesses send and manage\nlarge volumes of transactional and marketing emails.\n",
+            "technology": "SendGrid",
+            "external": true
+          }
+        ],
+        "operations": [
+          {
+            "action": "receive",
+            "channel": {
+              "name": "mailer.batch",
+              "message": {
+                "name": "BatchEmailRequestMessage",
+                "payload": "{\n  \"batch_id\": \"string[uuid]\",\n  \"batch_settings\": {\n    \"delay_between_batches\": \"integer\",\n    \"max_concurrent\": \"integer\"\n  },\n  \"emails\": [\n    {\n      \"content\": {\n        \"html\": \"string\",\n        \"text\": \"string\"\n      },\n      \"email_id\": \"string[uuid]\",\n      \"from\": {\n        \"email\": \"string[email]\",\n        \"name\": \"string\"\n      },\n      \"priority\": \"string[enum:low,normal,high]\",\n      \"scheduled_at\": \"string[date-time]\",\n      \"subject\": \"string\",\n      \"template_data\": \"object\",\n      \"template_id\": \"string\",\n      \"to\": [\n        {\n          \"email\": \"string[email]\",\n          \"name\": \"string\"\n        }\n      ]\n    }\n  ]\n}"
+              }
+            }
+          },
+          {
+            "action": "receive",
+            "channel": {
+              "name": "mailer.send",
+              "message": {
+                "name": "EmailSendRequestMessage",
+                "payload": "{\n  \"content\": {\n    \"html\": \"string\",\n    \"text\": \"string\"\n  },\n  \"email_id\": \"string[uuid]\",\n  \"from\": {\n    \"email\": \"string[email]\",\n    \"name\": \"string\"\n  },\n  \"priority\": \"string[enum:low,normal,high]\",\n  \"scheduled_at\": \"string[date-time]\",\n  \"subject\": \"string\",\n  \"template_data\": \"object\",\n  \"template_id\": \"string\",\n  \"to\": [\n    {\n      \"email\": \"string[email]\",\n      \"name\": \"string\"\n    }\n  ],\n  \"tracking\": {\n    \"click_tracking\": \"boolean\",\n    \"open_tracking\": \"boolean\",\n    \"subscription_tracking\": \"boolean\"\n  }\n}"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "info": {
+          "name": "Notification Service",
+          "description": "A service that handles user notifications, preferences, and interactions.\nSupports real-time notifications, user preferences management.\n",
+          "system": "Notification System",
+          "owner": "team-notifications",
+          "repository": "https://github.com/holydocs/notification-service",
+          "tags": [
+            "notifications",
+            "real-time",
+            "preferences"
+          ]
+        },
+        "relationships": [
+          {
+            "action": "requests",
+            "participant": "Firebase Cloud Messaging",
+            "description": "A service from Google that enables developers to send notifications and\ndata messages to Android, iOS, and web apps\n",
+            "technology": "FCM",
+            "external": true
+          }
+        ],
+        "operations": [
+          {
+            "action": "receive",
+            "channel": {
+              "name": "notification.preferences.get",
+              "message": {
+                "name": "PreferencesRequestMessage",
+                "payload": "{\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            },
+            "reply": {
+              "name": "notification.preferences.get",
+              "message": {
+                "name": "PreferencesReplyMessage",
+                "payload": "{\n  \"preferences\": {\n    \"categories\": {\n      \"marketing\": \"boolean\",\n      \"security\": \"boolean\",\n      \"updates\": \"boolean\"\n    },\n    \"email_enabled\": \"boolean\",\n    \"push_enabled\": \"boolean\",\n    \"quiet_hours\": {\n      \"enabled\": \"boolean\",\n      \"end\": \"string[time]\",\n      \"start\": \"string[time]\"\n    },\n    \"sms_enabled\": \"boolean\"\n  },\n  \"updated_at\": \"string[date-time]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "receive",
+            "channel": {
+              "name": "notification.preferences.update",
+              "message": {
+                "name": "PreferencesUpdateMessage",
+                "payload": "{\n  \"preferences\": {\n    \"categories\": {\n      \"marketing\": \"boolean\",\n      \"security\": \"boolean\",\n      \"updates\": \"boolean\"\n    },\n    \"email_enabled\": \"boolean\",\n    \"push_enabled\": \"boolean\",\n    \"quiet_hours\": {\n      \"enabled\": \"boolean\",\n      \"end\": \"string[time]\",\n      \"start\": \"string[time]\"\n    },\n    \"sms_enabled\": \"boolean\"\n  },\n  \"updated_at\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "receive",
+            "channel": {
+              "name": "notification.user.{user_id}.push",
+              "message": {
+                "name": "PushNotificationMessage",
+                "payload": "{\n  \"body\": \"string\",\n  \"created_at\": \"string[date-time]\",\n  \"data\": \"object\",\n  \"notification_id\": \"string[uuid]\",\n  \"priority\": \"string[enum:low,normal,high]\",\n  \"title\": \"string\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "notification.analytics",
+              "message": {
+                "name": "AnalyticsEventMessage",
+                "payload": "{\n  \"event_id\": \"string[uuid]\",\n  \"event_type\": \"string[enum:notification_sent,notification_opened,notification_clicked]\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"notification_id\": \"string[uuid]\",\n  \"timestamp\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "user.info.request",
+              "message": {
+                "name": "UserInfoRequestMessage",
+                "payload": "{\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            },
+            "reply": {
+              "name": "user.info.request",
+              "message": {
+                "name": "UserInfoReplyMessage",
+                "payload": "{\n  \"email\": \"string[email]\",\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\"\n  },\n  \"language\": \"string\",\n  \"name\": \"string\",\n  \"timezone\": \"string\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "info": {
+          "name": "Reports Service",
+          "description": "A service that generates and manages analytics reports by requesting data from the analytics service.\nProvides report scheduling, customization, and delivery capabilities for business intelligence\nand data-driven decision making.\n",
+          "system": "Analytics System",
+          "owner": "team-data-science",
+          "repository": "https://github.com/holydocs/reports-service",
+          "tags": [
+            "analytics",
+            "reporting",
+            "business-intelligence"
+          ]
+        },
+        "relationships": [],
+        "operations": [
+          {
+            "action": "send",
+            "channel": {
+              "name": "analytics.report.request",
+              "message": {
+                "name": "AnalyticsReportRequestMessage",
+                "payload": "{\n  \"filters\": {\n    \"campaign_ids\": [\n      \"string[uuid]\"\n    ],\n    \"event_types\": [\n      \"string\"\n    ],\n    \"user_ids\": [\n      \"string[uuid]\"\n    ],\n    \"user_segments\": [\n      \"string[enum:all_users,new_users,active_users,inactive_users,premium_users,free_users]\"\n    ]\n  },\n  \"format\": \"string[enum:json,csv,pdf]\",\n  \"metrics\": [\n    \"string[enum:event_count,user_count,conversion_rate,engagement_rate,response_time,error_rate]\"\n  ],\n  \"priority\": \"string[enum:low,normal,high,urgent]\",\n  \"report_id\": \"string[uuid]\",\n  \"report_type\": \"string[enum:user_activity,notification_performance,campaign_effectiveness,system_health,custom]\",\n  \"time_range\": {\n    \"end_date\": \"string[date]\",\n    \"start_date\": \"string[date]\",\n    \"timezone\": \"string\"\n  }\n}"
+              }
+            },
+            "reply": {
+              "name": "analytics.report.request",
+              "message": {
+                "name": "AnalyticsReportReplyMessage",
+                "payload": "{\n  \"error_message\": \"string\",\n  \"expires_at\": \"string[date-time]\",\n  \"generated_at\": \"string[date-time]\",\n  \"report_data\": {\n    \"charts\": [\n      {\n        \"data\": \"object\",\n        \"title\": \"string\",\n        \"type\": \"string[enum:line,bar,pie,scatter,heatmap]\"\n      }\n    ],\n    \"insights\": [\n      \"string\"\n    ],\n    \"metrics\": \"object\",\n    \"summary\": \"object\"\n  },\n  \"report_id\": \"string[uuid]\",\n  \"status\": \"string[enum:success,error,partial]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "reports.delivery",
+              "message": {
+                "name": "ReportDeliveryMessage",
+                "payload": "{\n  \"attachment_url\": \"string[uri]\",\n  \"delivered_at\": \"string[date-time]\",\n  \"delivery_id\": \"string[uuid]\",\n  \"delivery_method\": \"string[enum:email,webhook,s3,ftp]\",\n  \"error_message\": \"string\",\n  \"recipient\": \"string[email]\",\n  \"report_id\": \"string[uuid]\",\n  \"status\": \"string[enum:pending,sent,delivered,failed]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "reports.scheduled",
+              "message": {
+                "name": "ScheduledReportMessage",
+                "payload": "{\n  \"next_run\": \"string[date-time]\",\n  \"recipients\": [\n    \"string[email]\"\n  ],\n  \"report_type\": \"string[enum:user_activity,notification_performance,campaign_effectiveness,system_health,custom]\",\n  \"schedule\": {\n    \"frequency\": \"string[enum:daily,weekly,monthly,quarterly,yearly]\",\n    \"time\": \"string[time]\",\n    \"timezone\": \"string\"\n  },\n  \"schedule_id\": \"string[uuid]\"\n}"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "info": {
+          "name": "User Service",
+          "description": "A service that manages user information, profiles, and authentication.\nHandles user data requests, profile updates, and user lifecycle events.\n"
+        },
+        "relationships": [
+          {
+            "action": "uses",
+            "participant": "elasticsearch",
+            "description": "Uses Elasticsearch database",
+            "technology": "Elasticsearch"
+          },
+          {
+            "action": "uses",
+            "participant": "postgres",
+            "description": "Uses PostgreSQL database",
+            "technology": "PostgreSQL"
+          }
+        ],
+        "operations": [
+          {
+            "action": "receive",
+            "channel": {
+              "name": "user.info.request",
+              "message": {
+                "name": "UserInfoRequestMessage",
+                "payload": "{\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            },
+            "reply": {
+              "name": "user.info.request",
+              "message": {
+                "name": "UserInfoReplyMessage",
+                "payload": "{\n  \"email\": \"string[email]\",\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\"\n  },\n  \"language\": \"string\",\n  \"name\": \"string\",\n  \"timezone\": \"string\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "notification.preferences.update",
+              "message": {
+                "name": "PreferencesUpdateMessage",
+                "payload": "{\n  \"preferences\": {\n    \"categories\": {\n      \"marketing\": \"boolean\",\n      \"security\": \"boolean\",\n      \"updates\": \"boolean\"\n    },\n    \"email_enabled\": \"boolean\",\n    \"push_enabled\": \"boolean\",\n    \"quiet_hours\": {\n      \"enabled\": \"boolean\",\n      \"end\": \"string[time]\",\n      \"start\": \"string[time]\"\n    },\n    \"sms_enabled\": \"boolean\"\n  },\n  \"updated_at\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "user.analytics",
+              "message": {
+                "name": "UserAnalyticsEventMessage",
+                "payload": "{\n  \"event_id\": \"string[uuid]\",\n  \"event_type\": \"string[enum:user_registered,user_logged_in,profile_updated,preferences_changed,account_deleted]\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"timestamp\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          },
+          {
+            "action": "send",
+            "channel": {
+              "name": "user.info.update",
+              "message": {
+                "name": "UserInfoUpdateMessage",
+                "payload": "{\n  \"changes\": \"object\",\n  \"metadata\": {\n    \"environment\": \"string[enum:development,staging,production]\",\n    \"platform\": \"string[enum:ios,android,web]\",\n    \"source\": \"string[enum:mobile,web,api]\",\n    \"version\": \"string\"\n  },\n  \"updated_at\": \"string[date-time]\",\n  \"user_id\": \"string[uuid]\"\n}"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "changelogs": null
+}

@@ -14,10 +14,10 @@ HolyDOCs is a comprehensive documentation generation tool for microservices arch
 
 ## Quickstart
 
-[Here](internal/adapters/secondary/docs/testdata/expected/README.md) you can see at generated markdown documentation based on [example specifications](internal/adapters/secondary/schema/testdata). 
+[Here](internal/adapters/secondary/docs/testdata/expected_md_single_page/README.md) you can see at generated single-page markdown documentation based on [example specifications](internal/adapters/secondary/schema/testdata).
 
 The resulting overview diagram looks like this:
-![Overview Diagram](internal/adapters/secondary/docs/testdata/expected/diagrams/overview.svg)
+![Overview Diagram](internal/adapters/secondary/docs/testdata/expected_md_single_page/diagrams/overview.svg)
 
 ### Prerequisites
 
@@ -56,7 +56,8 @@ You'll need:
    ```
 
 4. **View the results**:
-   Open `./docs/README.md` in your browser or markdown viewer to see your generated documentation.
+   - For single-page format (default): Open `./docs/README.md` in your browser or markdown viewer
+   - For multi-page format: Open `./docs/README.md` as the main entry point, with individual pages in `./docs/services/`, `./docs/messageflow/`, etc.
 
 
 ## Installation
@@ -112,6 +113,7 @@ All environment variables use the `HOLYDOCS_` prefix:
 export HOLYDOCS_OUTPUT_TITLE="My Service Architecture Documentation"
 export HOLYDOCS_OUTPUT_DIR="./docs"
 export HOLYDOCS_OUTPUT_GLOBAL_NAME="Internal Services"
+export HOLYDOCS_OUTPUT_FORMAT="md_single_page"  # Options: md_single_page or md_multi_page
 
 # Input configuration
 export HOLYDOCS_INPUT_DIR="./specs"
@@ -136,6 +138,7 @@ output:
   title: "My Service Architecture Documentation"
   dir: "./docs"
   global_name: "Internal Services"
+  format: "md_single_page"  # Options: md_single_page (default) or md_multi_page
 
 # Input configuration
 input:
@@ -189,6 +192,7 @@ documentation:
 - `output.dir`: Directory where generated documentation will be saved
 - `output.title`: Title for the generated documentation
 - `output.global_name`: Name used for grouping internal services in diagrams
+- `output.format`: Documentation format - `md_single_page` (default) generates all documentation in a single README.md file, or `md_multi_page` generates documentation split across multiple files (overview in README.md, services in `services/`, messageflow in `messageflow/`, etc.)
 
 **Diagram Configuration (D2):**
 - `diagram.d2.pad`: Padding around diagrams in pixels (default: 64)
@@ -218,7 +222,7 @@ Full example can be found [here](holydocs.example.yaml).
 HolyDOCs is actively developed with the following features planned:
 
 ### Documentation Generation
-- [ ] **Single Page / Multi Page Documentation**: Support for both single-page applications and multi-page documentation sites
+- [x] **Single Page / Multi Page Documentation**: Support for both single-page applications and multi-page documentation sites
 - [x] **Changelog Integration**: Automatic changelog generation similar to MessageFlow, tracking changes in service specifications over time
 
 ### Extensibility

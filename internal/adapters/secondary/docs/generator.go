@@ -26,8 +26,16 @@ var (
 	ErrDirectoryCreationFailed = errors.New("failed to create directory")
 )
 
-//go:embed templates/readme.tmpl
+//go:embed templates/md_single_page/readme.tmpl
 var readmeTemplateFS embed.FS
+
+//go:embed templates/md_multi_page/overview.tmpl
+//go:embed templates/md_multi_page/service.tmpl
+//go:embed templates/md_multi_page/system.tmpl
+//go:embed templates/md_multi_page/messageflow-context.tmpl
+//go:embed templates/md_multi_page/channel.tmpl
+//go:embed templates/md_multi_page/changelog.tmpl
+var multiPageTemplateFS embed.FS
 
 // DocumentationConfig is an alias for config.Documentation to avoid circular imports.
 type DocumentationConfig = config.Documentation
@@ -52,23 +60,26 @@ const (
 )
 
 type templateData struct {
-	Title            string
-	OverviewDiagram  string
-	OverviewD2       string
-	OverviewMarkdown string
-	Systems          []systemView
-	SystemDiagrams   map[string]systemDiagramView
-	SystemMarkdowns  map[string]string
-	ServiceSummaries map[string]string
-	SystemSummaries  map[string]string
-	MessageFlow      messageFlowView
-	Changelogs       []domain.Changelog
+	Title                  string
+	OverviewDiagram        string
+	OverviewD2             string
+	OverviewMarkdown       string
+	Systems                []systemView
+	SystemDiagrams         map[string]systemDiagramView
+	SystemMarkdowns        map[string]string
+	ServiceSummaries       map[string]string
+	SystemSummaries        map[string]string
+	MessageFlow            messageFlowView
+	Changelogs             []domain.Changelog
+	MessageFlowContextPath string
+	ChangelogPath          string
 }
 
 type systemView struct {
 	Name     string
 	Anchor   string
 	Services []serviceView
+	FilePath string
 }
 
 type systemDiagramView struct {
@@ -91,6 +102,7 @@ type serviceView struct {
 	InterServiceLinks     []serviceConnection
 	AsyncSummaries        []asyncSummary
 	ServiceFlowDiagram    string
+	FilePath              string
 }
 
 type relationshipSummary struct {
@@ -127,6 +139,7 @@ type channelView struct {
 	Anchor      string
 	DiagramPath string
 	Messages    []channelMessage
+	FilePath    string
 }
 
 type channelMessage struct {
@@ -210,6 +223,10 @@ func (g *Generator) Generate(
 	}
 
 	data := buildTemplateData(g.config, diagramResults, metadata.Changelogs)
+
+	if g.config.Output.Format == "md_multi_page" {
+		return newChangelog, writeMultiPageDocs(g.config.Output.Dir, data)
+	}
 
 	return newChangelog, writeReadme(g.config.Output.Dir, data)
 }
@@ -1242,7 +1259,7 @@ func writeReadme(outputDir string, data templateData) error {
 		"Anchor": sanitizeAnchor,
 		"Join":   strings.Join,
 		"lower":  strings.ToLower,
-	}).ParseFS(readmeTemplateFS, "templates/readme.tmpl")
+	}).ParseFS(readmeTemplateFS, "templates/md_single_page/readme.tmpl")
 	if err != nil {
 		return fmt.Errorf("parse template: %w", err)
 	}
@@ -1255,6 +1272,407 @@ func writeReadme(outputDir string, data templateData) error {
 	readmePath := filepath.Join(outputDir, "README.md")
 	if err := os.WriteFile(readmePath, []byte(buf.String()), filePerm); err != nil {
 		return fmt.Errorf("write README: %w", err)
+	}
+
+	return nil
+}
+
+// writeMultiPageDocs generates multi-page documentation structure.
+func writeMultiPageDocs(outputDir string, data templateData) error {
+	// Create directory structure
+	systemsDir := filepath.Join(outputDir, "systems")
+	if err := os.MkdirAll(systemsDir, dirPerm); err != nil {
+		return fmt.Errorf("create systems directory: %w", err)
+	}
+
+	servicesDir := filepath.Join(outputDir, "services")
+	if err := os.MkdirAll(servicesDir, dirPerm); err != nil {
+		return fmt.Errorf("create services directory: %w", err)
+	}
+
+	messageflowDir := filepath.Join(outputDir, "messageflow")
+	if err := os.MkdirAll(messageflowDir, dirPerm); err != nil {
+		return fmt.Errorf("create messageflow directory: %w", err)
+	}
+
+	channelsDir := filepath.Join(messageflowDir, "channels")
+	if err := os.MkdirAll(channelsDir, dirPerm); err != nil {
+		return fmt.Errorf("create channels directory: %w", err)
+	}
+
+	// Update data with file paths for navigation
+	data = enrichTemplateDataForMultiPage(data, outputDir)
+
+	// Write overview page (README.md)
+	if err := writeOverviewPage(outputDir, data); err != nil {
+		return fmt.Errorf("write overview page: %w", err)
+	}
+
+	// Write system pages
+	for _, system := range data.Systems {
+		if err := writeSystemPage(systemsDir, system, data); err != nil {
+			return fmt.Errorf("write system page for %s: %w", system.Name, err)
+		}
+	}
+
+	// Write service pages
+	if err := writeServicePages(servicesDir, data); err != nil {
+		return fmt.Errorf("write service pages: %w", err)
+	}
+
+	// Write messageflow context page
+	if data.MessageFlow.HasData {
+		if err := writeMessageFlowContextPage(messageflowDir, data); err != nil {
+			return fmt.Errorf("write messageflow context page: %w", err)
+		}
+
+		// Write channel pages
+		for _, channel := range data.MessageFlow.Channels {
+			if err := writeChannelPage(channelsDir, channel); err != nil {
+				return fmt.Errorf("write channel page for %s: %w", channel.Name, err)
+			}
+		}
+	}
+
+	// Write changelog page
+	if len(data.Changelogs) > 0 {
+		if err := writeChangelogPage(outputDir, data); err != nil {
+			return fmt.Errorf("write changelog page: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// writeServicePages generates all service pages.
+func writeServicePages(servicesDir string, data templateData) error {
+	channels := []channelView{}
+	if data.MessageFlow.HasData {
+		channels = data.MessageFlow.Channels
+	}
+
+	for _, system := range data.Systems {
+		for _, service := range system.Services {
+			if err := writeServicePage(servicesDir, service, channels); err != nil {
+				return fmt.Errorf("write service page for %s: %w", service.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// enrichTemplateDataForMultiPage adds file paths to template data for multi-page navigation.
+func enrichTemplateDataForMultiPage(data templateData, _ string) templateData {
+	// Add file paths to systems
+	for i := range data.Systems {
+		systemFilename := sanitizeFilename(data.Systems[i].Name) + ".md"
+		data.Systems[i].FilePath = filepath.ToSlash(
+			filepath.Join("systems", systemFilename))
+	}
+
+	// Add file paths to services and adjust diagram paths
+	for i := range data.Systems {
+		for j := range data.Systems[i].Services {
+			serviceFilename := sanitizeFilename(data.Systems[i].Services[j].Name) + ".md"
+			data.Systems[i].Services[j].FilePath = filepath.ToSlash(
+				filepath.Join("services", serviceFilename))
+			// Update diagram paths to be relative from service file location (services/ -> ../)
+			relDiagram := data.Systems[i].Services[j].RelationshipsDiagram
+			data.Systems[i].Services[j].RelationshipsDiagram = filepath.ToSlash(
+				filepath.Join("..", relDiagram))
+			if data.Systems[i].Services[j].ServiceFlowDiagram != "" {
+				flowDiagram := data.Systems[i].Services[j].ServiceFlowDiagram
+				data.Systems[i].Services[j].ServiceFlowDiagram = filepath.ToSlash(
+					filepath.Join("..", flowDiagram))
+			}
+		}
+	}
+
+	// Add file paths to channels and adjust diagram paths
+	if data.MessageFlow.HasData {
+		data.MessageFlowContextPath = "messageflow/context.md"
+		// Update context diagram path to be relative from messageflow directory
+		data.MessageFlow.ContextDiagram = filepath.ToSlash(
+			filepath.Join("..", data.MessageFlow.ContextDiagram))
+		for i := range data.MessageFlow.Channels {
+			channelFilename := sanitizeFilename(data.MessageFlow.Channels[i].Name) + ".md"
+			// Set path relative to overview page (messageflow/channels/{filename}.md)
+			data.MessageFlow.Channels[i].FilePath = filepath.ToSlash(
+				filepath.Join("messageflow", "channels", channelFilename))
+			// Update diagram paths to be relative from channel file location
+			// (messageflow/channels/ -> ../../)
+			channelDiagram := data.MessageFlow.Channels[i].DiagramPath
+			data.MessageFlow.Channels[i].DiagramPath = filepath.ToSlash(
+				filepath.Join("../..", channelDiagram))
+		}
+	}
+
+	// Add changelog path
+	if len(data.Changelogs) > 0 {
+		data.ChangelogPath = "changelog.md"
+	}
+
+	return data
+}
+
+// writeOverviewPage generates the main overview page (README.md) for multi-page mode.
+func writeOverviewPage(outputDir string, data templateData) error {
+	tmpl, err := template.New("overview.tmpl").Funcs(template.FuncMap{
+		"Anchor": sanitizeAnchor,
+		"Join":   strings.Join,
+		"lower":  strings.ToLower,
+	}).ParseFS(multiPageTemplateFS, "templates/md_multi_page/overview.tmpl")
+	if err != nil {
+		return fmt.Errorf("parse overview template: %w", err)
+	}
+
+	var buf strings.Builder
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("execute overview template: %w", err)
+	}
+
+	readmePath := filepath.Join(outputDir, "README.md")
+	if err := os.WriteFile(readmePath, []byte(buf.String()), filePerm); err != nil {
+		return fmt.Errorf("write overview page: %w", err)
+	}
+
+	return nil
+}
+
+// channelLink represents a link to a channel page from a service page.
+type channelLink struct {
+	Name string
+	Path string
+}
+
+// servicePageData represents data for a single service page.
+type servicePageData struct {
+	Service      serviceView
+	ChannelLinks []channelLink
+}
+
+// writeSystemPage generates an individual system page.
+func writeSystemPage(systemsDir string, system systemView, data templateData) error {
+	tmpl, err := template.New("system.tmpl").Funcs(template.FuncMap{
+		"Anchor": sanitizeAnchor,
+		"Join":   strings.Join,
+		"lower":  strings.ToLower,
+	}).ParseFS(multiPageTemplateFS, "templates/md_multi_page/system.tmpl")
+	if err != nil {
+		return fmt.Errorf("parse system template: %w", err)
+	}
+
+	systemDiagram := data.SystemDiagrams[system.Name]
+	systemMarkdown := data.SystemMarkdowns[system.Name]
+
+	// Update diagram paths to be relative from system file location (systems/ -> ../)
+	if systemDiagram.SystemDiagram != "" {
+		systemDiagram.SystemDiagram = filepath.ToSlash(
+			filepath.Join("..", systemDiagram.SystemDiagram))
+	}
+
+	// Update service file paths to be relative from system file location
+	for i := range system.Services {
+		system.Services[i].FilePath = filepath.ToSlash(
+			filepath.Join("../services", filepath.Base(system.Services[i].FilePath)))
+	}
+
+	pageData := systemPageData{
+		System:         system,
+		SystemDiagram:  systemDiagram,
+		SystemMarkdown: systemMarkdown,
+	}
+
+	var buf strings.Builder
+	if err := tmpl.Execute(&buf, pageData); err != nil {
+		return fmt.Errorf("execute system template: %w", err)
+	}
+
+	systemFilename := sanitizeFilename(system.Name) + ".md"
+	systemPath := filepath.Join(systemsDir, systemFilename)
+	if err := os.WriteFile(systemPath, []byte(buf.String()), filePerm); err != nil {
+		return fmt.Errorf("write system page: %w", err)
+	}
+
+	return nil
+}
+
+// systemPageData represents data for a single system page.
+type systemPageData struct {
+	System         systemView
+	SystemDiagram  systemDiagramView
+	SystemMarkdown string
+}
+
+// writeServicePage generates an individual service page.
+func writeServicePage(servicesDir string, service serviceView, messageFlowChannels []channelView) error {
+	tmpl, err := template.New("service.tmpl").Funcs(template.FuncMap{
+		"Anchor": sanitizeAnchor,
+		"Join":   strings.Join,
+		"lower":  strings.ToLower,
+	}).ParseFS(multiPageTemplateFS, "templates/md_multi_page/service.tmpl")
+	if err != nil {
+		return fmt.Errorf("parse service template: %w", err)
+	}
+
+	// Extract unique channel names from InterServiceLinks
+	channelSet := make(map[string]struct{})
+	for _, link := range service.InterServiceLinks {
+		if link.Channel != "" {
+			channelSet[link.Channel] = struct{}{}
+		}
+	}
+
+	// Match with MessageFlow.Channels to get file paths
+	channelLinks := make([]channelLink, 0)
+	channelMap := make(map[string]channelView)
+	for _, ch := range messageFlowChannels {
+		channelMap[ch.Name] = ch
+	}
+
+	for channelName := range channelSet {
+		if ch, exists := channelMap[channelName]; exists {
+			// Path relative to service file location (services/ -> ../messageflow/channels/{filename}.md)
+			channelLinks = append(channelLinks, channelLink{
+				Name: channelName,
+				Path: filepath.ToSlash(filepath.Join("..", "messageflow", "channels", sanitizeFilename(ch.Name)+".md")),
+			})
+		}
+	}
+
+	// Sort channel links by name for consistent output
+	sort.Slice(channelLinks, func(i, j int) bool {
+		return channelLinks[i].Name < channelLinks[j].Name
+	})
+
+	data := servicePageData{
+		Service:      service,
+		ChannelLinks: channelLinks,
+	}
+
+	var buf strings.Builder
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("execute service template: %w", err)
+	}
+
+	serviceFilename := sanitizeFilename(service.Name) + ".md"
+	servicePath := filepath.Join(servicesDir, serviceFilename)
+	if err := os.WriteFile(servicePath, []byte(buf.String()), filePerm); err != nil {
+		return fmt.Errorf("write service page: %w", err)
+	}
+
+	return nil
+}
+
+// messageFlowContextPageData represents data for the messageflow context page.
+type messageFlowContextPageData struct {
+	ContextDiagram string
+	Channels       []channelView
+}
+
+// writeMessageFlowContextPage generates the messageflow context page.
+func writeMessageFlowContextPage(messageflowDir string, data templateData) error {
+	tmpl, err := template.New("messageflow-context.tmpl").Funcs(template.FuncMap{
+		"Anchor": sanitizeAnchor,
+		"Join":   strings.Join,
+		"lower":  strings.ToLower,
+	}).ParseFS(multiPageTemplateFS, "templates/md_multi_page/messageflow-context.tmpl")
+	if err != nil {
+		return fmt.Errorf("parse messageflow context template: %w", err)
+	}
+
+	// Adjust channel paths to be relative from messageflow directory
+	// (messageflow/channels/{filename}.md -> channels/{filename}.md)
+	channels := make([]channelView, len(data.MessageFlow.Channels))
+	for i, ch := range data.MessageFlow.Channels {
+		channels[i] = ch
+		// Remove "messageflow/" prefix since we're already in messageflow directory
+		if strings.HasPrefix(ch.FilePath, "messageflow/") {
+			channels[i].FilePath = strings.TrimPrefix(ch.FilePath, "messageflow/")
+		}
+	}
+
+	pageData := messageFlowContextPageData{
+		ContextDiagram: data.MessageFlow.ContextDiagram,
+		Channels:       channels,
+	}
+
+	var buf strings.Builder
+	if err := tmpl.Execute(&buf, pageData); err != nil {
+		return fmt.Errorf("execute messageflow context template: %w", err)
+	}
+
+	contextPath := filepath.Join(messageflowDir, "context.md")
+	if err := os.WriteFile(contextPath, []byte(buf.String()), filePerm); err != nil {
+		return fmt.Errorf("write messageflow context page: %w", err)
+	}
+
+	return nil
+}
+
+// channelPageData represents data for a single channel page.
+type channelPageData struct {
+	Channel channelView
+}
+
+// writeChannelPage generates an individual channel page.
+func writeChannelPage(channelsDir string, channel channelView) error {
+	tmpl, err := template.New("channel.tmpl").Funcs(template.FuncMap{
+		"Anchor": sanitizeAnchor,
+		"Join":   strings.Join,
+		"lower":  strings.ToLower,
+	}).ParseFS(multiPageTemplateFS, "templates/md_multi_page/channel.tmpl")
+	if err != nil {
+		return fmt.Errorf("parse channel template: %w", err)
+	}
+
+	data := channelPageData{
+		Channel: channel,
+	}
+
+	var buf strings.Builder
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("execute channel template: %w", err)
+	}
+
+	channelFilename := sanitizeFilename(channel.Name) + ".md"
+	channelPath := filepath.Join(channelsDir, channelFilename)
+	if err := os.WriteFile(channelPath, []byte(buf.String()), filePerm); err != nil {
+		return fmt.Errorf("write channel page: %w", err)
+	}
+
+	return nil
+}
+
+// changelogPageData represents data for the changelog page.
+type changelogPageData struct {
+	Changelogs []domain.Changelog
+}
+
+// writeChangelogPage generates the changelog page.
+func writeChangelogPage(outputDir string, data templateData) error {
+	tmpl, err := template.New("changelog.tmpl").Funcs(template.FuncMap{
+		"Anchor": sanitizeAnchor,
+		"Join":   strings.Join,
+		"lower":  strings.ToLower,
+	}).ParseFS(multiPageTemplateFS, "templates/md_multi_page/changelog.tmpl")
+	if err != nil {
+		return fmt.Errorf("parse changelog template: %w", err)
+	}
+
+	pageData := changelogPageData{
+		Changelogs: data.Changelogs,
+	}
+
+	var buf strings.Builder
+	if err := tmpl.Execute(&buf, pageData); err != nil {
+		return fmt.Errorf("execute changelog template: %w", err)
+	}
+
+	changelogPath := filepath.Join(outputDir, "changelog.md")
+	if err := os.WriteFile(changelogPath, []byte(buf.String()), filePerm); err != nil {
+		return fmt.Errorf("write changelog page: %w", err)
 	}
 
 	return nil

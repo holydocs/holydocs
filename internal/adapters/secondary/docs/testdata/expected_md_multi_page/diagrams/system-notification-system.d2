@@ -1,0 +1,28 @@
+
+notification-system: {
+  label: "Notification System"
+  style: {
+    stroke: "#374151"
+    stroke-width: 2
+    fill: "#f9fafb"
+  }
+}
+notification-system.service_mailer-service: "Mailer Service"
+notification-system.service_notification-service: "Notification Service"
+service_campaign-service: "Campaign Service"
+external_firebase-cloud-messaging: "Firebase Cloud Messaging"
+external_firebase-cloud-messaging.style: {
+  stroke-dash: 2
+  fill: "#fff7ed"
+}
+external_sendgrid: "SendGrid"
+external_sendgrid.style: {
+  stroke-dash: 2
+  fill: "#fff7ed"
+}
+service_user-service: "User Service"
+service_campaign-service -> notification-system.service_notification-service: "send"
+notification-system.service_mailer-service -> external_sendgrid: "requests"
+notification-system.service_notification-service -> external_firebase-cloud-messaging: "requests"
+service_user-service -> notification-system.service_notification-service: "reply"
+service_user-service -> notification-system.service_notification-service: "send"

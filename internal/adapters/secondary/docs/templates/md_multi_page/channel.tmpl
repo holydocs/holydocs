@@ -1,0 +1,23 @@
+# [←](../context.md) | {{ .Channel.Name }}
+
+![{{ .Channel.Name }}]({{ .Channel.DiagramPath }})
+
+{{- if .Channel.Messages }}
+
+## Messages
+
+{{- range .Channel.Messages }}
+{{- if .Direction }}
+**{{ .Direction }}**: {{ .Name }}
+{{- else }}
+**{{ .Name }}**
+{{- end }}
+
+{{- if .Payload }}
+```json
+{{ .Payload }}
+```
+{{- end }}
+
+{{- end }}
+{{- end }}

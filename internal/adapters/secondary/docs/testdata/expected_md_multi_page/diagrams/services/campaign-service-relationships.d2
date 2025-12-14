@@ -1,0 +1,50 @@
+
+service_campaign-service: {
+  label: "Campaign Service"
+  shape: rectangle
+}
+service_analytics-service: {
+  label: "Analytics Service"
+  shape: rectangle
+}
+service_notification-service: {
+  label: "Notification Service"
+  shape: rectangle
+}
+service_user-service: {
+  label: "User Service"
+  shape: rectangle
+}
+external_marketing-manager: {
+  label: "Marketing Manager\n[http-server]"
+  shape: rectangle
+  tooltip: ||
+A marketing manager who is responsible for creating and managing campaigns.
+
+  ||
+  style: {
+    stroke: "#059669"
+    stroke-width: 2
+    fill: "#ecfdf5"
+  }
+}
+external_postgres: {
+  label: "postgres\n[PostgreSQL]"
+  shape: cylinder
+  tooltip: ||
+Uses PostgreSQL database
+  ||
+}
+external_redis: {
+  label: "redis\n[Redis]"
+  shape: cylinder
+  tooltip: ||
+Uses Redis database
+  ||
+}
+external_marketing-manager -> service_campaign-service: "requests"
+service_campaign-service -> external_postgres: "uses"
+service_campaign-service -> external_redis: "uses"
+service_campaign-service -> service_analytics-service: "pub"
+service_campaign-service -> service_notification-service: "pub"
+service_campaign-service -> service_user-service: "req"

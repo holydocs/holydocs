@@ -34,6 +34,7 @@ type Output struct {
 	Dir        string `env:"DIR" yaml:"dir" default:"docs" usage:"Directory where documentation will be generated"`
 	Title      string `env:"TITLE" yaml:"title" default:"HolyDOCs" usage:"Title for the generated documentation"`
 	GlobalName string `env:"GLOBAL_NAME" yaml:"global_name" default:"Internal Services" usage:"Name used for grouping internal services in diagrams"`
+	Format     string `env:"FORMAT" yaml:"format" default:"md_single_page" usage:"Documentation format: md_single_page or md_multi_page"`
 }
 
 // Diagram represents diagram generation configuration for HolyDOCs.
@@ -132,6 +133,10 @@ func validateConfig(cfg *Config) error {
 
 	if cfg.Output.Dir == "" {
 		return errors.New("output directory cannot be empty")
+	}
+
+	if cfg.Output.Format != "md_single_page" && cfg.Output.Format != "md_multi_page" {
+		return fmt.Errorf("invalid output format: %s (must be md_single_page or md_multi_page)", cfg.Output.Format)
 	}
 
 	if cfg.Input.Dir == "" &&

@@ -45,7 +45,7 @@ func TestGenerateDocs(t *testing.T) {
 	holydocsSchema, holydocsTarget, mfSchema, mfTarget := setupTestSchemasAndTargets(t, ctx, asyncFiles, serviceFiles)
 	var outputDir string
 	if overwrite {
-		outputDir = filepath.Join("testdata", "expected")
+		outputDir = filepath.Join("testdata", "expected_md_single_page")
 	} else {
 		outputDir = filepath.Join(t.TempDir(), "docs")
 	}
@@ -72,7 +72,8 @@ func TestGenerateDocs(t *testing.T) {
 		return
 	}
 
-	validateGeneratedFiles(t, outputDir)
+	expectedDir := filepath.Join("testdata", "expected_md_single_page")
+	validateGeneratedFiles(t, outputDir, expectedDir)
 }
 
 func getTestDataFiles() ([]string, []string) {
@@ -311,9 +312,7 @@ func TestWriteMetadata(t *testing.T) {
 	require.NoError(t, err, "Metadata file should be created")
 }
 
-func validateGeneratedFiles(t *testing.T, outputDir string) {
-	expectedDir := filepath.Join("testdata", "expected")
-
+func validateGeneratedFiles(t *testing.T, outputDir, expectedDir string) {
 	generatedFiles := collectFiles(t, outputDir)
 	expectedFiles := collectFiles(t, expectedDir)
 
@@ -384,4 +383,46 @@ func sortedKeys(m map[string][]byte) []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+func TestGenerateDocs_MultiPageFormat(t *testing.T) {
+	t.Parallel()
+
+	overwrite := os.Getenv("OVERWRITE_TESTDATA") == "true"
+
+	ctx := context.Background()
+	asyncFiles, serviceFiles := getTestDataFiles()
+	holydocsSchema, holydocsTarget, mfSchema, mfTarget := setupTestSchemasAndTargets(t, ctx, asyncFiles, serviceFiles)
+	var outputDir string
+	if overwrite {
+		outputDir = filepath.Join("testdata", "expected_md_multi_page")
+	} else {
+		outputDir = filepath.Join(t.TempDir(), "docs")
+	}
+
+	// Load test configuration to get documentation settings
+	configPath := filepath.Join("testdata", "holydocs.test.yaml")
+	configInjector := do.New()
+	do.ProvideValue(configInjector, config.ConfigFilePath(configPath))
+	cfg, err := config.LoadConfig(configInjector)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	// Update the config to use the test output directory and multi-page format
+	cfg.Output.Dir = outputDir
+	cfg.Output.Format = "md_multi_page"
+
+	generator := setupTestGenerator(t, holydocsTarget, cfg)
+	_, err = generator.Generate(ctx, holydocsSchema, mfSchema, mfTarget)
+	if err != nil {
+		t.Fatalf("generate docs: %v", err)
+	}
+
+	if overwrite {
+		return
+	}
+
+	expectedDir := filepath.Join("testdata", "expected_md_multi_page")
+	validateGeneratedFiles(t, outputDir, expectedDir)
 }

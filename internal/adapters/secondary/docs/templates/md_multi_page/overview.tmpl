@@ -1,0 +1,31 @@
+# {{ .Title }}
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Services](#services)
+{{- range .Systems }}
+  - [{{ .Name }}]({{ .FilePath }})
+  {{- range .Services }}
+    - [{{ .Name }}]({{ .FilePath }})
+  {{- end }}
+{{- end }}
+{{- if .MessageFlow.HasData }}
+- [Message Flow]({{ .MessageFlowContextPath }})
+  - [Context]({{ .MessageFlowContextPath }}#context)
+  - [Channels]({{ .MessageFlowContextPath }}#channels)
+  {{- range .MessageFlow.Channels }}
+    - [{{ .Name }}]({{ .FilePath }})
+  {{- end }}
+{{- end }}
+{{- if .Changelogs }}
+- [Changelog]({{ .ChangelogPath }})
+{{- end }}
+
+## Overview
+
+![Overview]({{ .OverviewDiagram }})
+
+{{- if .OverviewMarkdown }}
+{{ .OverviewMarkdown }}
+{{- end }}

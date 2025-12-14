@@ -1,0 +1,60 @@
+# [←](../README.md) | {{ .Service.Name }}
+
+{{- if .Service.Description }}
+{{ .Service.Description }}
+
+{{- end }}
+{{- if or .Service.System .Service.Owner .Service.Repository .Service.Tags }}
+{{ if .Service.System }}- System: {{ .Service.System }}
+{{ end }}
+{{ if .Service.Owner }}- Owner: {{ .Service.Owner }}
+{{ end }}
+{{ if .Service.Repository }}- Repository: [{{ .Service.Repository }}]({{ .Service.Repository }})
+{{ end }}
+{{ if .Service.Tags }}- Tags: {{ Join .Service.Tags ", " }}
+{{ end }}
+
+{{- end }}
+
+## Relationships
+
+![{{ .Service.Name }} Relationships]({{ .Service.RelationshipsDiagram }})
+
+{{- if .Service.RelationshipSummaries }}
+{{- range .Service.RelationshipSummaries }}
+- **{{ .Action }}** {{ .Participant }}{{- if .Technology }} via {{ .Technology }}{{- end }}{{- if .Proto }} ({{ .Proto }}){{- end }}{{- if .External }} _(external)_{{- end }}{{- if .Description }} — {{ .Description }}{{- end }}
+{{- end }}
+{{- else }}
+_No relationships documented._
+{{- end }}
+
+{{- if .Service.InterServiceLinks }}
+## Inter-Service Connections
+
+{{- range .Service.InterServiceLinks }}
+- {{ .Direction }} {{ .Target }} via {{ .Channel }}{{- if eq .Kind "reply" }} (reply){{- end }}
+{{- end }}
+
+{{- end }}
+{{- if or .Service.AsyncSummaries .Service.ServiceFlowDiagram }}
+## Message Flow
+
+{{- if .Service.ServiceFlowDiagram }}
+![{{ .Service.Name }} Service Interactions]({{ .Service.ServiceFlowDiagram }})
+
+{{- end }}
+{{- if .Service.AsyncSummaries }}
+{{- range .Service.AsyncSummaries }}
+- {{ .Direction }} {{ .Target }} ({{ .Label }})
+{{- end }}
+{{- end }}
+
+{{- if .ChannelLinks }}
+### Related Channels
+
+{{- range .ChannelLinks }}
+- [{{ .Name }}]({{ .Path }})
+{{- end }}
+
+{{- end }}
+{{- end }}
